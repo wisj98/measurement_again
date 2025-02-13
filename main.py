@@ -218,14 +218,8 @@ def start_measurement():
                     labels[i][2].configure(text = f"(기준)\n{recipes[choice][i][0]}")
                 else:
                     labels[i][2].configure(text = f"{recipes[choice][i][0]}")
-<<<<<<< HEAD
             right_container.after(1000, update_labels, labels, values)
         right_container.after(1000, update_labels, labels, values)
-=======
-            time.sleep(0.5)
-            right_container.after(250, update_labels, labels, values)
-        right_container.after(500, update_labels, labels, values)
->>>>>>> 4fec827373332eecc9d5528b548fa977c0b8a316
         def measurement(num):
             measurement_popup = customtkinter.CTkToplevel(measurement_window)
             measurement_popup.geometry("800x500")
@@ -242,15 +236,9 @@ def start_measurement():
             
             standard = sorted(values, key = lambda x: len(x))[-1][0] / sorted(values, key = lambda x: len(x))[-1][1]
             target = standard * values[num][1]
-<<<<<<< HEAD
             popup_container_2_highest = customtkinter.CTkLabel(master=popup_container_2, text = f"하한\n{round(target - target * values[num][2] / 100,3)}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
             popup_container_2_lowest = customtkinter.CTkLabel(master=popup_container_2, text = f"상한\n{round(target + target * values[num][2] / 100,3)}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
             popup_container_2_perfect = customtkinter.CTkLabel(master=popup_container_2, text = f"적정\n{round(target,3)}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
-=======
-            popup_container_2_highest = customtkinter.CTkLabel(master=popup_container_2, text = f"하한\n{round(target - target * values[num][2] / 100,2)}g", font=("Arial", 30, "bold"), width = 100, height = 100)
-            popup_container_2_lowest = customtkinter.CTkLabel(master=popup_container_2, text = f"상한\n{round(target + target * values[num][2] / 100,2)}g", font=("Arial", 30, "bold"), width = 100, height = 100)
-            popup_container_2_perfect = customtkinter.CTkLabel(master=popup_container_2, text = f"적정\n{round(target, 2)}g", font=("Arial", 30, "bold"), width = 100, height = 100)
->>>>>>> 4fec827373332eecc9d5528b548fa977c0b8a316
 
             popup_container_2_highest.grid(row=0, column=0, sticky="nsew", pady=10, padx =10)
             popup_container_2_lowest.grid(row=0, column=1, sticky="nsew", pady=10, padx =10)
@@ -262,7 +250,6 @@ def start_measurement():
 
             popup_container_3 = customtkinter.CTkFrame(master=measurement_popup)
             popup_container_3.grid(row=2, column = 0, sticky="nsew", pady=10, padx =10)
-<<<<<<< HEAD
             now, count = 0, 0
             # start = values[num][0]
             # others = sum([x[0] for x in values]) - start
@@ -283,34 +270,6 @@ def start_measurement():
                         color = "#%02x%02x%02x" % (0, g, 0)  # RGB 색상 코드 생성
                         popup_container_3_now.configure(fg_color=color, text_color="black")
                 popup_container_3_now.configure(text=f"{round(now,3)}kg")
-=======
-            now = 0
-            start = values[num][0]
-            others = sum([x[0] for x in values]) - start
-            def update_value():
-                def hsv_to_rgb(h, s, v):
-                    return colorsys.hsv_to_rgb(h / 360, s, v)
-                nonlocal start, now, others
-                now = start + 1 #설정 필요
-                # if target != 0:
-                #     if abs(now - target) > (target * values[num][1] / 100):
-                #         diff = abs(now - target * values[num][1] / 100)
-                #         h = 60  # 노란색의 H 값 (HSV 색상 모델)
-                #         s = 1.0  # 채도 최대
-                #         v = 1 - (diff / (target * values[num][1] / 100))  # 명도 조절 (0 ~ 1)
-                #         r, g, b = hsv_to_rgb(h, s, v)  # HSV를 RGB로 변환
-                #         color = "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
-                #         popup_container_3_now.configure(fg_color=color)
-                #     else:
-                #         diff = abs(now - target * values[num][1] / 100)
-                #         h = 120  # 초록색의 H 값 (HSV 색상 모델)
-                #         s = 1.0  # 채도 최대
-                #         v = 1 - (diff / (target * values[num][1] ))  # 명도 조절 (0 ~ 1)
-                #         r, g, b = hsv_to_rgb(h, s, v)  # HSV를 RGB로 변환
-                #         color = "#%02x%02x%02x" % (int(r * 255), int(g * 255), int(b * 255))
-                #         popup_container_3_now.configure(fg_color=color)
-                popup_container_3_now.configure(text=f"{now}g")
->>>>>>> 4fec827373332eecc9d5528b548fa977c0b8a316
                 popup_container_3_now.after(500, update_value)
 
             popup_container_3_now = customtkinter.CTkLabel(master=popup_container_3, text=f"{round(now,3)}kg", font=("Arial", 100, "bold"))
