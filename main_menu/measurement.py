@@ -5,8 +5,11 @@ import os
 from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
-# from main_menu.style import configure_treeview_style
-from measuring import measuring
+from main_menu.style import configure_treeview_style
+# from measuring import measuring
+
+def measuring():
+    return 1
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -163,8 +166,9 @@ def measurement_window(data):
 
     now_labels = {}
 
-    def measurement(target, min, max):
-        measurement_popup = ctk.CTkToplevel(measurement_window)
+    def measurement(data):
+        target, min, max = data[0], data[1], data[2]
+        measurement_popup = ctk.CTkToplevel(window)
         measurement_popup.geometry("800x500")
         measurement_popup.wm_attributes("-topmost", 1)
         measurement_popup.title(f"{target} 측량 중...")
@@ -193,20 +197,21 @@ def measurement_window(data):
         popup_container_3.grid(row=2, column = 0, sticky="nsew", pady=10, padx =10)
         def update_value():
             nonlocal now_labels
-            _ = measuring.measuring()
+            # _ = measuring.measuring()
+            _ = measuring()
             if _ != 0 or _ >= 100 or (count >= 3 and _ == 0): 
-                now_labels[target] = _
+                now_labels[target][1] = _
                 count = 0
             else: count += 1
             if target != 0:
-                if now_labels[target] > min and now_labels[target] < max:
+                if now_labels[target][1] > min and now_labels[target][1] < max:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
                 else:
                     popup_container_3_now.configure(fg_color="green", text_color="black")
-            popup_container_3_now.configure(text=f"{round(now_labels[target],3)}kg")
+            popup_container_3_now.configure(text=f"{round(now_labels[target][1],3)}kg")
             popup_container_3_now.after(500, update_value)
 
-        popup_container_3_now = ctk.CTkLabel(master=popup_container_3, text=f"{round(now_labels[target],3)}kg", font=("Arial", 100, "bold"))
+        popup_container_3_now = ctk.CTkLabel(master=popup_container_3, text=f"{round(now_labels[target][1],3)}kg", font=("Arial", 100, "bold"))
         popup_container_3_now.grid(row=0, column = 0, sticky="nsew", pady=10, padx =10)
 
         def update_value_():
@@ -242,7 +247,7 @@ def measurement_window(data):
         ctk.CTkLabel(inner_frame, text=f"최소: {min_value}kg", font=("Helvetica", 40, "bold"),text_color = "blue", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최대: {max_value}kg", font=("Helvetica", 40, "bold"),text_color = "red", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20), 0]
-        ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda target, min, max = [ingredient_name, min_value, max_value]: measurement(target, min, max)).pack(side="right", padx=1, pady=1)
+        ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
     window.mainloop()
 
 
