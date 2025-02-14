@@ -6,10 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-# from measuring import measuring
-
-def measuring():
-    return 1
+from measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -152,9 +149,10 @@ def measurement_window(data):
         now = datetime.now()
         formatted_time = now.strftime("현재 시각: %Y/%m/%d - %H:%M:%S")
         time_label.configure(text=formatted_time)
+        for i in now_labels.keys():
+            now_labels[i][0].configure(text =f"현재: {now_labels[i][1]}kg")
         window.after(1000, update_time)
 
-    update_time()
     with open(f"{config["경로"]}/recipe.pickle", "rb") as fr:
         recipe = pickle.load(fr)[data[3]]['배합비']
     whole = 0
@@ -195,16 +193,16 @@ def measurement_window(data):
 
         popup_container_3 = ctk.CTkFrame(master=measurement_popup)
         popup_container_3.grid(row=2, column = 0, sticky="nsew", pady=10, padx =10)
+        count = 0
         def update_value():
-            nonlocal now_labels
-            # _ = measuring.measuring()
-            _ = measuring()
+            nonlocal now_labels, count
+            _ = round(measuring(),3)
             if _ != 0 or _ >= 100 or (count >= 3 and _ == 0): 
                 now_labels[target][1] = _
                 count = 0
             else: count += 1
             if target != 0:
-                if now_labels[target][1] > min and now_labels[target][1] < max:
+                if now_labels[target][1] < min or now_labels[target][1] > max:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
                 else:
                     popup_container_3_now.configure(fg_color="green", text_color="black")
@@ -246,8 +244,10 @@ def measurement_window(data):
         ctk.CTkLabel(inner_frame, text=f"재료명: {ingredient_name}", font=("Helvetica", 40, "bold"), width = 500, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최소: {min_value}kg", font=("Helvetica", 40, "bold"),text_color = "blue", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최대: {max_value}kg", font=("Helvetica", 40, "bold"),text_color = "red", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20), 0]
+        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0]
+        now_labels[ingredient_name][0].pack(side="left", padx=10, pady=20)
         ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
+    update_time()
     window.mainloop()
 
 

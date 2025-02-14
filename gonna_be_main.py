@@ -21,7 +21,6 @@ def login():
 
 def main_menu():
     mainmenu = ctk.CTk()
-    mainmenu.geometry("600x500+0+0")
     mainmenu.title("메인 메뉴")
     mainmenu.attributes('-fullscreen', True)
 
