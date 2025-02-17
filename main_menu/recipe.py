@@ -63,6 +63,7 @@ def recipe_manage():
         def fix_recipe():
             try:
                 new = entry.get().split("=")
+                print(new[1].split("+"))
                 recipes[new[0]]["배합비"] = [[x.split("/")[0], float(x.split("/")[1]), float(x.split("/")[2])] for x in new[1].split("+")]
                 recipes[new[0]]["배합법"] = entry_.get().split(",")
                 with open(file_path, "wb") as fw:
@@ -76,7 +77,7 @@ def recipe_manage():
                 warning_window.geometry("300x100")
                 warning_window.title("경고")
 
-                warning_label = ctk.CTkLabel(master=warning_window, text="배합비 양식에 맞춰서 작성해 주세요.")
+                warning_label = ctk.CTkLabel(master=warning_window, text="양식에 맞춰서 작성해 주세요.")
                 warning_label.pack(pady=10, padx=20)
 
                 def close_warning_window():
@@ -92,7 +93,7 @@ def recipe_manage():
 
         entry = ctk.CTkEntry(master=fix_recipe_window, height=50, font=("Arial", 24, "bold"))
         entry.pack(pady=0, padx=20, fill="x", expand=True)
-        entry.insert(0, f"{selected_now}={" + ".join([f"{x[0]}/{x[1]}/{x[2]}" for x in fixing_recipe])}")
+        entry.insert(0, f"{selected_now}={"+".join([f"{x[0]}/{x[1]}/{x[2]}" for x in fixing_recipe])}")
 
         label_ = ctk.CTkLabel(master=fix_recipe_window, text="배합법을 입력해주세요. \n예시)우유 붓기,식초 붓기,섞기,간장 붓기", font=("Arial", 24, "bold"))
         label_.pack(pady=(0, 0), padx=20)

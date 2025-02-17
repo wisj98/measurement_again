@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-# from measuring import measuring
+from measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -206,7 +206,7 @@ def measurement_window(data):
             if target != 0:
                 if now_labels[target][1] < min or now_labels[target][1] > max:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
-                    now_labels[i][2].configure(fg_color = "green")
+                    # now_labels[i][2].configure(fg_color = "green")
                 else:
                     popup_container_3_now.configure(fg_color="green", text_color="black")
             popup_container_3_now.configure(text=f"{round(now_labels[target][1],3)}kg")
@@ -247,7 +247,7 @@ def measurement_window(data):
         ctk.CTkLabel(inner_frame, text=f"재료명: {ingredient_name}", font=("Helvetica", 40, "bold"), width = 500, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최소: {min_value}kg", font=("Helvetica", 40, "bold"),text_color = "blue", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최대: {max_value}kg", font=("Helvetica", 40, "bold"),text_color = "red", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0, ]
+        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0, inner_frame]
         now_labels[ingredient_name][0].pack(side="left", padx=10, pady=20)
         ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
     
@@ -268,14 +268,19 @@ def measurement_window(data):
             data.append("위성진") #작업자 넣을 곳
             data.append("/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()]))
             data.append(sum([now_labels[x][1] for x in now_labels.keys()]))
+            print(saving)
+            print(data)
             saving.loc[len(saving)] = data
             saving.to_csv(save_name, index = False)
 
             ingredients = pd.read_csv(config["경로"] + "/ingredients.csv")
             ingredients["유통기한"] = pd.to_datetime(ingredients["유통기한"])
             for x in list(now_labels.keys()):
-                idx = ingredients.loc[ingredients["원료명"] == x, "유통기한"].idxmin()
-                ingredients.at[idx, "현재량"] = ingredients.at[idx, "현재량"] - now_labels[x][1]
+                if x in list(ingredients["원료명"]):
+                    print(x)
+                    idx = ingredients.loc[ingredients["원료명"] == x, "유통기한"].idxmin()
+                    ingredients.at[idx, "현재량"] = ingredients.at[idx, "현재량(kg)"] - now_labels[x][1]
+                    print(ingredients.at[idx, "현재량"])
             ingredients.to_csv(config["경로"] + "/ingredients.csv", index=False)
 
         else:

@@ -182,6 +182,7 @@ def order_start():
 
     def delete_order():
         # 선택된 항목 가져오기
+        orders = pd.read_csv(file_name)
         selected_items = tree.selection()
         if not selected_items:
             CTkMessagebox(title="알림", message="삭제할 항목을 선택해주세요.", icon="cancel")
@@ -210,6 +211,7 @@ def order_start():
             orders.drop(indices_to_drop, inplace=True)
 
             orders = orders.reset_index(drop=True)
+            orders.to_csv(file_name, index=False)
             refresh_tree()
 
     def save_data():
