@@ -10,9 +10,6 @@ from main_menu.style import configure_treeview_style
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
 
-with open(f"{config["경로"]}/recipe.pickle", "rb") as fr:
-    recipes = pickle.load(fr).keys()
-
 data_path = config["경로"] + "/data"
 if not os.path.exists(data_path):
     os.makedirs(data_path)
@@ -28,7 +25,7 @@ else:
         "지시자": ["김철수", "박영희", "김철수", "이민호", "박영희", "김철수"],
         "지시 시간": ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00"],
         "작업물": ["가", "나", "다", "라", "마", "마"],
-        "작업량kg": [10, 20, 15, 25, 30, 10],
+        "작업량(kg)": [10, 20, 15, 25, 30, 10],
         "배합 가마": ["a","a","a","a","a","a"],
          "현재 단계": ["0: 작업 전", "1: 측량 진행 중", "2: 측량 완료", "3: 배합 진행 중", "4: 배합 완료", "0: 작업 전"]
     }
@@ -53,6 +50,7 @@ else:
     orders.to_csv(file_name, index=False)
 
 def order_start():
+    orders = pd.read_csv(file_name)
     window = ctk.CTk()
     window.title("작업 지시")
     window.attributes('-fullscreen', True)
@@ -72,58 +70,85 @@ def order_start():
     update_time()
     configure_treeview_style(window)
     tree = ttk.Treeview(window, columns=list(orders.columns), show="headings")
-    
+
     def refresh_tree():
-        tree.delete(*tree.get_children())
+        orders = pd.read_csv(file_name)
+        tree.delete(*tree.get_children())  # 기존 트리의 모든 행 삭제
 
-        for col in orders.columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=100, anchor="center")
+        # 트리 컬럼 업데이트 (orders가 비어도 컬럼은 유지)
+        if orders.empty:
+            tree["columns"] = list(orders.columns)  # 컬럼 업데이트
+            tree["show"] = "headings"  # 컬럼 헤더가 표시되도록 설정
 
-        orders_sorted = orders.sort_values(by="현재 단계")
-        grouped = orders_sorted.groupby("현재 단계")
+            for col in orders.columns:
+                tree.heading(col, text=col)
+                tree.column(col, anchor="center", width=100)  # 기본 너비 설정
+        else:
+            # 컬럼별 동적 너비 설정
+            col_widths = {}
+            for col in orders.columns:
+                max_content_width = orders[col].astype(str).apply(len).max() if not orders[col].empty else 0
+                max_header_width = len(col)  
+                max_width = max(max_content_width, max_header_width) * 10  
+                col_widths[col] = max_width
 
-        for stage, group in grouped:
-            for _, row in group.iterrows():
-                tree.insert("", "end", values=list(row))
-            tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])
+            tree["columns"] = list(orders.columns)
+            tree["show"] = "headings"  
+
+            for col in orders.columns:
+                tree.heading(col, text=col)
+                tree.column(col, anchor="center", width=col_widths[col])
+
+            # 데이터 정렬 후 삽입
+            if "현재 단계" in orders.columns:
+                orders_sorted = orders.sort_values(by="현재 단계")
+                grouped = orders_sorted.groupby("현재 단계")
+
+                for stage, group in grouped:
+                    for _, row in group.iterrows():
+                        tree.insert("", "end", values=list(row))
+                    tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])  # 구분선 추가
 
         tree.pack(fill="both", expand=True, padx=10, pady=10)
+        window.after(5000, refresh_tree)
 
     refresh_tree()
 
     def add_order():
         add_window = ctk.CTk()
         add_window.title("작업 지시 추가")
-        add_window.geometry("250x200")
+        add_window.geometry("850x550")  # 창 크기 3배로 조정
 
-        # 레이블 및 입력 필드 생성
-        ctk.CTkLabel(add_window, text="작업자:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        worker_entry = ctk.CTkEntry(add_window)
-        worker_entry.grid(row=0, column=1, padx=10, pady=5)
+        workers = config["작업자"]["지시자"]
+        gamas = config["작업자"]["가마"]
 
-        ctk.CTkLabel(add_window, text="작업물:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
+        with open(f"{config['경로']}/recipe.pickle", "rb") as fr:
+            recipes = pickle.load(fr).keys()
+        ctk.CTkLabel(add_window, text="작업자:", font=("Helvetica", 40, "bold")).grid(row=0, column=0, padx=30, pady=(100,10), sticky="e")
+        worker_combobox = ctk.CTkComboBox(add_window, font=("Helvetica", 40, "bold"), width=500, values=workers)
+        worker_combobox.grid(row=0, column=1, padx=30, pady=(100,10))
 
-        # 콤보박스 생성
-        options = list(recipes) # 원하는 옵션 리스트
-        product_combobox = ctk.CTkComboBox(add_window, values=options)
-        product_combobox.grid(row=1, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="작업물:", font=("Helvetica", 40, "bold")).grid(row=1, column=0, padx=30, pady=10, sticky="e")
 
-        ctk.CTkLabel(add_window, text="작업량:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        amount_entry = ctk.CTkEntry(add_window)
-        amount_entry.grid(row=2, column=1, padx=10, pady=5)
+        options = list(recipes)  # 원하는 옵션 리스트
+        product_combobox = ctk.CTkComboBox(add_window, values=options, font=("Helvetica", 40, "bold"), width=500, dropdown_font=("Helvetica", 25, "bold"))
+        product_combobox.grid(row=1, column=1, padx=30, pady=10)
 
-        ctk.CTkLabel(add_window, text="배합 가마:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        gama_entry = ctk.CTkEntry(add_window)
-        gama_entry.grid(row=3, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="작업량(kg):", font=("Helvetica", 40, "bold")).grid(row=2, column=0, padx=30, pady=10, sticky="e")
+        amount_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        amount_entry.grid(row=2, column=1, padx=30, pady=10)
+
+        ctk.CTkLabel(add_window, text="배합 가마:", font=("Helvetica", 40, "bold")).grid(row=3, column=0, padx=30, pady=10, sticky="e")
+        gama_combobox = ctk.CTkComboBox(add_window, font=("Helvetica", 40, "bold"), width=500, values=gamas)
+        gama_combobox.grid(row=3, column=1, padx=30, pady=10)
 
         def submit_order():
-            global orders
+            orders = pd.read_csv(file_name)
 
-            worker = worker_entry.get()
+            worker = worker_combobox.get()
             product = product_combobox.get()
             amount = amount_entry.get()
-            gama = gama_entry.get()
+            gama = gama_combobox.get()
 
             if not worker or not product or not amount:
                 CTkMessagebox(title="오류", message="모든 필드를 채워주세요.", icon="cancel")
@@ -134,24 +159,26 @@ def order_start():
                 CTkMessagebox(title="오류", message="작업량은 숫자로 입력해야 합니다.", icon="cancel")
                 add_window.destroy()
                 return
-                
+
             new_order = {
-            "작업일": datetime.today().strftime("%Y-%m-%d"),
-            "지시자": worker,
-            "지시 시간": datetime.now().strftime("%H:%M"),
-            "작업물": product,
-            "작업량kg": amount,
-            "배합 가마": gama,
-            "현재 단계": "0: 작업 전"
+                "작업일": datetime.today().strftime("%Y-%m-%d"),
+                "지시자": worker,
+                "지시 시간": datetime.now().strftime("%H:%M"),
+                "작업물": product,
+                "작업량(kg)": amount,
+                "배합 가마": gama,
+                "현재 단계": "0: 작업 전"
             }
             orders = pd.concat([orders, pd.DataFrame(new_order, index=[0])], ignore_index=True)
+            orders.to_csv(file_name, index=False)
             refresh_tree()
             add_window.destroy()
-            
-        submit_button = ctk.CTkButton(add_window, text="추가", command=submit_order)
-        submit_button.grid(row=4, column=0, columnspan=2, pady=10)
+
+        submit_button = ctk.CTkButton(add_window, text="추가", font=("Helvetica", 50, "bold"), command=submit_order, width = 300, height = 75)
+        submit_button.grid(row=4, column=0, columnspan=2, pady=30)
 
         add_window.mainloop()
+
 
     def delete_order():
         # 선택된 항목 가져오기
@@ -162,7 +189,7 @@ def order_start():
 
         # 삭제하기 전에 확인 메시지 표시
         if CTkMessagebox(title="삭제 확인", message="선택한 항목을 삭제하시겠습니까?", icon="question").get():
-            global orders
+            orders = pd.read_csv(file_name)
 
             indices_to_drop = []
             for item in selected_items:
@@ -186,7 +213,6 @@ def order_start():
             refresh_tree()
 
     def save_data():
-        orders.to_csv(file_name, index=False)
         window.destroy()
 
     # 버튼 프레임 생성
@@ -200,7 +226,7 @@ def order_start():
     delete_button = ctk.CTkButton(button_frame, text="작업 삭제", font=("Helvetica", 40, "bold"), command=delete_order, height=100, width= 300)
     delete_button.pack(side="left", padx=10)
 
-    save_button = ctk.CTkButton(button_frame, text="저장", font=("Helvetica", 40, "bold"), command=save_data, height=100, width= 300)
+    save_button = ctk.CTkButton(button_frame, text="종료하기", font=("Helvetica", 40, "bold"), command=save_data, height=100, width= 300)
     save_button.pack(side="left", padx=10)
 
     window.mainloop()

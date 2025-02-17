@@ -22,15 +22,13 @@ if os.path.isfile(file_name):
     ingredients = pd.read_csv(file_name)
 else:
     data = {
-        "원료 코드": [str(i).zfill(3) for i in range(1, 51)],
-        "원료명": [
-            "원료" + str(i) for i in range(1, 51)
-        ],
-        "Lot no.": ["?" for _ in range(50)],
-        "거래처명": ["거래처" + str(i) for i in range(1, 51)],
-        "유통기한": ["2025-12-31" for _ in range(50)],
-        "입고량(L)": [np.random.randint(100, 1000) for _ in range(50)],
-        "현재량(L)": [np.random.randint(0, 100) for _ in range(50)],
+        "원료 코드": [],
+        "원료명": [],
+        "Lot no.": [],
+        "거래처명": [],
+        "유통기한": [],
+        "입고량(kg)": [],
+        "현재량(kg)": [],
     }
     ingredients = pd.DataFrame(data)
 
@@ -92,32 +90,32 @@ def ingredient_manage():
     def add_order():
         add_window = ctk.CTk()
         add_window.title("입고")
-        add_window.geometry("250x300")
+        add_window.geometry("850x650+0+0")  # 창 크기 조정 (add_order()와 동일)
 
-        # 레이블 및 입력 필드 생성
-        ctk.CTkLabel(add_window, text="원료 코드:").grid(row=0, column=0, padx=10, pady=5, sticky="e")
-        code_entry = ctk.CTkEntry(add_window)
-        code_entry.grid(row=0, column=1, padx=10, pady=5)
+        # 레이블 및 입력 필드 폰트, 크기 조정
+        ctk.CTkLabel(add_window, text="원료 코드:", font=("Helvetica", 40, "bold")).grid(row=0, column=0, padx=30, pady=(100,10), sticky="e")
+        code_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        code_entry.grid(row=0, column=1, padx=30, pady=(100,10))
 
-        ctk.CTkLabel(add_window, text="원료명:").grid(row=1, column=0, padx=10, pady=5, sticky="e")
-        name_entry = ctk.CTkEntry(add_window)
-        name_entry.grid(row=1, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="원료명:", font=("Helvetica", 40, "bold")).grid(row=1, column=0, padx=30, pady=10, sticky="e")
+        name_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        name_entry.grid(row=1, column=1, padx=30, pady=10)
 
-        ctk.CTkLabel(add_window, text="Lot No:").grid(row=2, column=0, padx=10, pady=5, sticky="e")
-        lot_entry = ctk.CTkEntry(add_window)
-        lot_entry.grid(row=2, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="Lot No:", font=("Helvetica", 40, "bold")).grid(row=2, column=0, padx=30, pady=10, sticky="e")
+        lot_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        lot_entry.grid(row=2, column=1, padx=30, pady=10)
 
-        ctk.CTkLabel(add_window, text="거래처명:").grid(row=3, column=0, padx=10, pady=5, sticky="e")
-        company_entry = ctk.CTkEntry(add_window)
-        company_entry.grid(row=3, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="거래처명:", font=("Helvetica", 40, "bold")).grid(row=3, column=0, padx=30, pady=10, sticky="e")
+        company_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        company_entry.grid(row=3, column=1, padx=30, pady=10)
 
-        ctk.CTkLabel(add_window, text="유통기한:").grid(row=4, column=0, padx=10, pady=5, sticky="e")
-        until_entry = ctk.CTkEntry(add_window)
-        until_entry.grid(row=4, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="유통기한:", font=("Helvetica", 40, "bold")).grid(row=4, column=0, padx=30, pady=10, sticky="e")
+        until_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500, placeholder_text="ex) 1998-10-22")
+        until_entry.grid(row=4, column=1, padx=30, pady=10)
 
-        ctk.CTkLabel(add_window, text="입고량:").grid(row=5, column=0, padx=10, pady=5, sticky="e")
-        L_entry = ctk.CTkEntry(add_window)
-        L_entry.grid(row=5, column=1, padx=10, pady=5)
+        ctk.CTkLabel(add_window, text="입고량(kg):", font=("Helvetica", 40, "bold")).grid(row=5, column=0, padx=30, pady=10, sticky="e")
+        L_entry = ctk.CTkEntry(add_window, font=("Helvetica", 40, "bold"), width=500)
+        L_entry.grid(row=5, column=1, padx=30, pady=10)
 
         def submit_order():
             global ingredients
@@ -129,34 +127,32 @@ def ingredient_manage():
             until = until_entry.get()
             L = L_entry.get()
 
-            if False in [code, name, lot, company, until, L]:
+            if not all([code, name, lot, company, until, L]): #더 간결하게 수정
                 CTkMessagebox(title="오류", message="모든 필드를 채워주세요.", icon="cancel")
-                add_window.destroy()
+                return #함수 종료
             try:
                 L = int(L)
             except ValueError:
                 CTkMessagebox(title="오류", message="입고량은 숫자로 입력해야 합니다.", icon="cancel")
-                add_window.destroy()
-                return
-                
+                return #함수 종료
+
             new_ingredient = {
-                "원료 코드":code,
-                "원료명":name ,
-                "Lot no.":lot ,
-                "거래처명":company ,
-                "유통기한":until ,
-                "입고량(L)":L ,
-                "현재량(L)":L
+                "원료 코드": code,
+                "원료명": name,
+                "Lot no.": lot,
+                "거래처명": company,
+                "유통기한": until,
+                "입고량(kg)": L,
+                "현재량(kg)": L
             }
             ingredients = pd.concat([ingredients, pd.DataFrame(new_ingredient, index=[0])], ignore_index=True)
             refresh_tree()
             add_window.destroy()
-            
-        submit_button = ctk.CTkButton(add_window, text="추가", command=submit_order)
-        submit_button.grid(row=6, column=0, columnspan=2, pady=10)
+
+        submit_button = ctk.CTkButton(add_window, text="추가", font=("Helvetica", 50, "bold"), command=submit_order, width=300, height=75) # 버튼 크기, 폰트 조정
+        submit_button.grid(row=6, column=0, columnspan=2, pady=30)  # pady 값 조정
 
         add_window.mainloop()
-
     def delete_order():
         # 선택된 항목 가져오기
         selected_items = tree.selection()

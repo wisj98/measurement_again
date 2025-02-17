@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-from measuring import measuring
+# from measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -27,7 +27,7 @@ def measurement_start():
             "지시자": [],
             "지시 시간": [],
             "작업물": [],
-            "작업량": [],
+            "작업량(kg)": [],
             "배합 가마": [],
             "현재 단계": []
         }
@@ -61,8 +61,9 @@ def measurement_start():
             for _, row in group.iterrows():
                 tree.insert("", "end", values=list(row))
             tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])
-
+        
         tree.pack(fill="both", expand=True, padx=10, pady=10)
+        window.after(10000, refresh_tree)
 
     def update_time():
         now = datetime.now()
@@ -97,7 +98,7 @@ def measurement_start():
                             selected_rows.append(row_values) 
                             break
             update = orders[orders.apply(lambda row: list(row) in selected_rows, axis=1)].index
-
+        
             orders.loc[update, "현재 단계"] = "1: 측량 진행 중"
             orders.to_csv(data_path + "/" + today + "_작업지시.csv", index=False)
             print(selected_rows)
@@ -119,6 +120,7 @@ def measurement_start():
     window.mainloop()
 
 def measurement_window(data):
+    data = data[:-1]
     window = ctk.CTk()
     window.title("측량")
     window.attributes('-fullscreen', True)
@@ -135,14 +137,14 @@ def measurement_window(data):
     frame_container = ctk.CTkFrame(master=window)
     frame_container.pack(side="top", fill="both", expand=True)
 
-    left_frame = ctk.CTkFrame(master=frame_container)
+    left_frame = ctk.CTkFrame(master=frame_container, width=100)
     left_frame.grid(row=0, column=0, sticky="nsew")
 
-    right_frame = ctk.CTkFrame(master=frame_container)
+    right_frame = ctk.CTkScrollableFrame(master=frame_container)
     right_frame.grid(row=0, column=1, sticky="nsew")
 
-    frame_container.grid_columnconfigure(0, weight=2) 
-    frame_container.grid_columnconfigure(1, weight=7)
+    frame_container.grid_columnconfigure(0, weight=0) 
+    frame_container.grid_columnconfigure(1, weight=1)
     frame_container.grid_rowconfigure(0, weight=1)
 
     def update_time():
@@ -204,6 +206,7 @@ def measurement_window(data):
             if target != 0:
                 if now_labels[target][1] < min or now_labels[target][1] > max:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
+                    now_labels[i][2].configure(fg_color = "green")
                 else:
                     popup_container_3_now.configure(fg_color="green", text_color="black")
             popup_container_3_now.configure(text=f"{round(now_labels[target][1],3)}kg")
@@ -244,9 +247,75 @@ def measurement_window(data):
         ctk.CTkLabel(inner_frame, text=f"재료명: {ingredient_name}", font=("Helvetica", 40, "bold"), width = 500, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최소: {min_value}kg", font=("Helvetica", 40, "bold"),text_color = "blue", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
         ctk.CTkLabel(inner_frame, text=f"최대: {max_value}kg", font=("Helvetica", 40, "bold"),text_color = "red", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0]
+        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0, ]
         now_labels[ingredient_name][0].pack(side="left", padx=10, pady=20)
         ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
+    
+    def save(data):
+        save_name = data_path + "/" + today + "_측정완료.csv"
+        orders = pd.read_csv(file_name)
+
+        orders.loc[
+            (orders["지시자"] == data[1]) & 
+            (orders["지시 시간"] == data[2]) & 
+            (orders["작업물"] == data[3]) & 
+            (orders["작업량(kg)"] == data[4]), 
+            "현재 단계"
+        ] = "2: 측량 완료"
+        orders.to_csv(file_name, index=False)
+        if os.path.isfile(save_name):
+            saving = pd.read_csv(save_name)
+            data.append("위성진") #작업자 넣을 곳
+            data.append("/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()]))
+            data.append(sum([now_labels[x][1] for x in now_labels.keys()]))
+            saving.loc[len(saving)] = data
+            saving.to_csv(save_name, index = False)
+
+            ingredients = pd.read_csv(config["경로"] + "/ingredients.csv")
+            ingredients["유통기한"] = pd.to_datetime(ingredients["유통기한"])
+            for x in list(now_labels.keys()):
+                idx = ingredients.loc[ingredients["원료명"] == x, "유통기한"].idxmin()
+                ingredients.at[idx, "현재량"] = ingredients.at[idx, "현재량"] - now_labels[x][1]
+            ingredients.to_csv(config["경로"] + "/ingredients.csv", index=False)
+
+        else:
+            saving = pd.DataFrame({
+        "작업일": [data[0]],
+        "지시자": [data[1]],
+        "지시 시간": [data[2]],
+        "작업물": [data[3]],
+        "작업량(kg)": [data[4]],
+        "배합 가마": [data[5]],
+        "측량자": ["위성진"], # 작업자 넣을 곳
+        "측량 결과":["/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()])],
+        "측량 총량":[sum([now_labels[x][1] for x in now_labels.keys()])]
+        })
+            saving.to_csv(save_name, index = False)
+
+        window.destroy()
+
+    def cancel(data):
+        save_name = data_path + "/" + today + "_측정완료.csv"
+        orders = pd.read_csv(file_name)
+
+        orders.loc[
+            (orders["지시자"] == data[1]) & 
+            (orders["지시 시간"] == data[2]) & 
+            (orders["작업물"] == data[3]) & 
+            (orders["작업량(kg)"] == data[4]), 
+            "현재 단계"
+        ] = "0: 작업 전"
+        print(orders)
+        orders.to_csv(file_name, index=False)
+
+        window.destroy()
+
+    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 500)
+    done_button.grid(row=2, column=0, sticky="s", pady=10, padx = 10)
+
+    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 500)
+    cancel_button.grid(row=3, column=0, sticky="s", pady=10, padx = 10)
+
     update_time()
     window.mainloop()
 

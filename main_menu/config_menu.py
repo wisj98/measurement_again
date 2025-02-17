@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 import pickle
 
 with open("config.pickle","rb") as fr:
@@ -13,7 +13,7 @@ def config_start():
     root_button = ctk.CTkButton(master=window, text="메인 경로 설정", command=root)
     root_button.pack(pady=20, padx=20)
 
-    user_button = ctk.CTkButton(master=window, text="작업자 설정", command=user)
+    user_button = ctk.CTkButton(master=window, text="작업자 설정", command=user_)
     user_button.pack(pady=20, padx=20)
 
     right_button = ctk.CTkButton(master=window, text="권한 설정", command=right)
@@ -70,93 +70,141 @@ def right():
 
     right_.mainloop()
 
-def user():
-    user_window = ctk.CTk()
-    user_window.geometry("300x450")
-    user_window.title("작업자 관리")
+def user_():
+    def user__(witch):
+      user_window = ctk.CTk()
+      user_window.geometry("300x450")
+      user_window.title("작업자 관리")
+  
+      user_list = sorted(config["작업자"][witch])
+      selected_now = None
+  
+      label = ctk.CTkLabel(master=user_window, text="작업자 목록")
+      label.pack(pady=10, padx=20)
+  
+      # Treeview 생성
+      tree = ttk.Treeview(user_window, columns=("Name"), show="headings")
+      tree.heading("Name", text="작업자 이름")
+      tree.pack(pady=10, padx=20, fill="both", expand=True)
+  
+      # 작업자 목록을 Treeview에 추가
+      for user in user_list:
+          tree.insert("", "end", values=(user,))
+  
+      def on_tree_select(event):
+          """Treeview에서 항목을 선택했을 때 실행되는 함수"""
+          nonlocal selected_now
+          selected_item = tree.selection()
+          if selected_item:
+              selected_now = tree.item(selected_item[0], "values")[0]
+              label_now.configure(text=f"선택된 작업자: {selected_now}")
+  
+      tree.bind("<<TreeviewSelect>>", on_tree_select)
+  
+      def add_user(witch):
+          new_user_window = ctk.CTk()
+          new_user_window.geometry("400x200")
+          new_user_window.title("작업자 추가")
+  
+          def new_user():
+              new_name = entry.get().strip()
+              if new_name:
+                  config["작업자"][witch].append(new_name)
+                  with open("config.pickle", "wb") as f:
+                      pickle.dump(config, f)
+                  new_user_window.destroy()
+                  update_treeview()
+  
+          label = ctk.CTkLabel(master=new_user_window, text="추가할 작업자의 이름을 입력하세요.")
+          label.pack(pady=10)
+  
+          entry = ctk.CTkEntry(master=new_user_window)
+          entry.pack(pady=10, padx=20, fill="x", expand=True)
+  
+          add_button = ctk.CTkButton(master=new_user_window, text="추가", command=new_user)
+          add_button.pack(pady=10)
+  
+          new_user_window.mainloop()
+  
+      def delete_user():
+          """선택된 작업자를 삭제"""
+          nonlocal selected_now
+          if selected_now and selected_now in config["작업자"][witch]:
+              config["작업자"][witch].remove(selected_now)
+              with open("config.pickle", "wb") as f:
+                  pickle.dump(config, f)
+              selected_now = None
+              update_treeview()
+              label_now.configure(text="선택된 작업자: 없음")
+          else:
+              print("삭제할 유저를 선택하세요.")
+  
+      def update_treeview():
+          """Treeview 내용을 업데이트하는 함수"""
+          tree.delete(*tree.get_children())  # 기존 목록 삭제
+          for user in sorted(config["작업자"][witch]):
+              tree.insert("", "end", values=(user,))
+  
+      # 현재 선택된 작업자 표시 라벨
+      label_now = ctk.CTkLabel(master=user_window, text="선택된 작업자: 없음")
+      label_now.pack(pady=5)
+  
+      # 추가 버튼
+      add_button = ctk.CTkButton(master=user_window, text="작업자 추가", command=lambda: add_user(witch))
+      add_button.pack(pady=5)
+  
+      # 삭제 버튼
+      delete_button = ctk.CTkButton(master=user_window, text="작업자 삭제", command=delete_user)
+      delete_button.pack(pady=5)
+  
+      user_window.mainloop()
+
+    window = ctk.CTk()
+    window.geometry("570x350")
+    window.title("수정할 작업자 리스트 선택")
+
+    roles = list(config["작업자"].keys())
+
+    frame = ctk.CTkFrame(window, width=450, height=300)
+    frame.grid(row=0,column=0, padx=20, pady=30)
+
+    label_1 = ctk.CTkButton(frame, width = 100, height = 20, text = roles[0], font=("Helvetica", 20, "bold"), command = lambda: user__(roles[0]))
+    label_1.grid(row=0,column=0,padx=5, pady=5)
+
+    label_2 = ctk.CTkButton(frame, width = 100, height = 20, text = roles[1], font=("Helvetica", 20, "bold"), command = lambda: user__(roles[1]))
+    label_2.grid(row=0,column=1,padx=5, pady=5)
+
+    label_3 = ctk.CTkButton(frame, width = 100, height = 20, text = roles[2], font=("Helvetica", 20, "bold"), command = lambda: user__(roles[2]))
+    label_3.grid(row=0,column=2,padx=5, pady=5)
+
+    label_4 = ctk.CTkButton(frame, width = 100, height = 20, text = roles[3], font=("Helvetica", 20, "bold"), command = lambda: user__(roles[3]))
+    label_4.grid(row=0,column=3,padx=5, pady=5)
+
+    frame_1 = ctk.CTkScrollableFrame(frame, width = 100, height = 200)
+    frame_1.grid(row=1,column=0,padx=5, pady=10)
+
+    for user in config["작업자"][roles[0]]:
+        ctk.CTkLabel(frame_1, text = user, font=("Helvetica", 15, "bold"), width=100, height=18).pack(padx=3, pady=3)
+
+    frame_2 = ctk.CTkScrollableFrame(frame, width = 100, height = 200)
+    frame_2.grid(row=1,column=1,padx=5, pady=10)
+
+    for user in config["작업자"][roles[1]]:
+        ctk.CTkLabel(frame_2, text = user, font=("Helvetica", 15, "bold"), width=100, height=18).pack(padx=3, pady=3)
     
-    user_list = sorted(config["작업자"])
+    frame_3 = ctk.CTkScrollableFrame(frame, width = 100, height = 200)
+    frame_3.grid(row=1,column=2,padx=5, pady=10)
+    
+    for user in config["작업자"][roles[2]]:
+        ctk.CTkLabel(frame_3, text = user, font=("Helvetica", 15, "bold"), width=100, height=18).pack(padx=3, pady=3)
 
-    selected_now = None
+    frame_4 = ctk.CTkScrollableFrame(frame, width = 100, height = 200)
+    frame_4.grid(row=1,column=3,padx=5, pady=10)
 
-    label = ctk.CTkLabel(master=user_window, text="작업자 목록")
-    label.pack(pady=10, padx=20)
+    for user in config["작업자"][roles[3]]:
+        ctk.CTkLabel(frame_4, text = user, font=("Helvetica", 15, "bold"), width=100, height=18).pack(padx=3, pady=3)
 
-    text_box = ctk.CTkTextbox(master=user_window, wrap="word")
-    text_box.pack(pady=20, padx=20, fill="both", expand=True)
-
-    def on_text_box_click(event):
-        nonlocal selected_now
-        text_box.tag_add("sel", "current linestart", "current lineend")
-        text_box.tag_add("selected", "current linestart", "current lineend")  # 선택된 행에 "selected" 태그 추가
-
-        # 선택된 부분 출력
-        selected_text = text_box.get("sel.first", "sel.last")
-        label_now.configure(text=f"선택된 작업자: {selected_text}")
-        selected_now = selected_text
-
-    text_box.bind("<Button-1>", on_text_box_click)
-    text_box.bind("<Double-Button-1>", on_text_box_click)
-
-    # user_list의 요소들을 텍스트 박스에 추가
-    for user in user_list:
-        text_box.insert("end", user + "\n")
-        
-    def add_user():
-        new_user_window = ctk.CTk()
-        new_user_window.geometry("600x150")
-        new_user_window.title("작업자 추가")
-
-        def new_user():
-            config["작업자"].append(entry.get())
-            with open("config.pickle","wb") as f:
-                pickle.dump(config, f)
-            new_user_window.destroy()
-            text_box.delete("1.0", "end")  # 텍스트 박스 내용 지우기
-            user_list = sorted(config["작업자"])  # 레시피 목록 업데이트
-            for user in user_list:
-                text_box.insert("end", user + "\n")
-
-        label = ctk.CTkLabel(master=new_user_window, text="""추가할 작업자의 이름(코드)을 입력해주세요.""")
-        label.pack(pady=10, padx=20)
-
-        # 글자를 입력할 수 있는 박스 생성
-        entry = ctk.CTkEntry(master=new_user_window)
-        entry.pack(pady=10, padx=20, fill="x", expand=True)
-
-        # "추가" 버튼 생성
-        add_button = ctk.CTkButton(master=new_user_window, text="추가", command = new_user)
-        add_button.pack(pady=10, padx=20)
-
-        new_user_window.mainloop()
-
-    def delete_user():
-        try:
-            selected_user = selected_now # 선택된 레시피 이름 가져오기
-            if selected_user in config["작업자"]:
-                config["작업자"].remove(selected_user)
-                with open("config.pickle","wb") as f:
-                    pickle.dump(config, f)
-                text_box.delete("1.0", "end")  # 텍스트 박스 내용 지우기
-                user_list = sorted(config["작업자"])  # 레시피 목록 업데이트
-                for user in user_list:
-                    text_box.insert("end", user + "\n")
-            else:
-                print("삭제할 유저를 선택하세요.")
-        except:
-            print("선택한 작업자가 존재하지 않습니다.")
-
-    # 현재 라벨
-    label_now = ctk.CTkLabel(master = user_window, text="선택된 작업자:")
-    label_now.pack(pady=5, padx=20)
-
-    add_button = ctk.CTkButton(master=user_window, text="작업자 추가", command = add_user)
-    add_button.pack(pady=5, padx=20)
-
-    delete_button = ctk.CTkButton(master=user_window, text="작업자 삭제", command=delete_user)
-    delete_button.pack(pady=5, padx=20)
-
-    user_window.mainloop()
+    window.mainloop()
 
 if __name__ == "__main__":
     config_start()
