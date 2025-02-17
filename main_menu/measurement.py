@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-from measuring import measuring
+# from measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -279,8 +279,8 @@ def measurement_window(data):
                 if x in list(ingredients["원료명"]):
                     print(x)
                     idx = ingredients.loc[ingredients["원료명"] == x, "유통기한"].idxmin()
-                    ingredients.at[idx, "현재량"] = ingredients.at[idx, "현재량(kg)"] - now_labels[x][1]
-                    print(ingredients.at[idx, "현재량"])
+                    ingredients.at[idx, "현재량(kg)"] = ingredients.at[idx, "현재량(kg)"] - now_labels[x][1]
+                    print(ingredients.at[idx, "현재량(kg)"])
             ingredients.to_csv(config["경로"] + "/ingredients.csv", index=False)
 
         else:
