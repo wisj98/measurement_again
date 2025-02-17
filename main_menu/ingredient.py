@@ -44,6 +44,7 @@ else:
     ingredients.to_csv(file_name, index=False)
 
 def ingredient_manage():
+    ingredients = pd.read_csv(file_name)
     window = ctk.CTk()
     window.title("재고 관리")
     window.attributes('-fullscreen', True)

@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-# from measuring import measuring
+from measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -206,9 +206,10 @@ def measurement_window(data):
             if target != 0:
                 if now_labels[target][1] < min or now_labels[target][1] > max:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
-                    # now_labels[i][2].configure(fg_color = "green")
+                    now_labels[target][2].configure(fg_color = "lightyellow")
                 else:
                     popup_container_3_now.configure(fg_color="green", text_color="black")
+                    now_labels[target][2].configure(fg_color = "lightgreen")
             popup_container_3_now.configure(text=f"{round(now_labels[target][1],3)}kg")
             popup_container_3_now.after(500, update_value)
 
