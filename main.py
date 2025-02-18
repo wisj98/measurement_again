@@ -1,7 +1,11 @@
 import customtkinter as ctk
 
 from main_menu.order import order_start
-from main_menu.measurement import measurement_start
+try: 
+    from main_menu.measurement import measurement_start
+    check_measure = True
+except:
+    check_measure = False
 from main_menu.mix import mix_start
 from main_menu.recipe import recipe_manage
 from main_menu.ingredient import ingredient_manage
@@ -126,7 +130,10 @@ app.grid_rowconfigure(3, weight=1)
 app.grid_rowconfigure(4, weight=1)
 
 # 제목 레이블
-title_label = ctk.CTkLabel(master=app, text="생산 관리 시스템", font=("Helvetica", 80, "bold"))
+_ = "생산 관리 시스템"
+if check_measure == False:
+    _ = "생산 관리 시스템\n(저울이 연결되지 않은 상태입니다.)"
+title_label = ctk.CTkLabel(master=app, text=_, font=("Helvetica", 80, "bold"))
 title_label.grid(row=0, column=0, columnspan=2, pady=(150, 0), sticky="n")  # 중앙 배치
 
 # 아이디 레이블 및 입력 필드
