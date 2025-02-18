@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-from measuring import measuring
+# from main_menu.measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
@@ -63,7 +63,7 @@ def measurement_start():
             tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])
         
         tree.pack(fill="both", expand=True, padx=10, pady=10)
-        window.after(10000, refresh_tree)
+        window.after(20000, refresh_tree)
 
     def update_time():
         now = datetime.now()
@@ -99,7 +99,6 @@ def measurement_start():
                             break
             update = orders[orders.apply(lambda row: list(row) in selected_rows, axis=1)].index
         
-            orders.loc[update, "현재 단계"] = "1: 측량 진행 중"
             orders.to_csv(data_path + "/" + today + "_작업지시.csv", index=False)
             print(selected_rows)
             measurement_window(selected_rows[0])
@@ -253,6 +252,7 @@ def measurement_window(data):
         ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
     
     def save(data):
+        user = user_combo.get()
         save_name = data_path + "/" + today + "_측정완료.csv"
         orders = pd.read_csv(file_name)
 
@@ -262,11 +262,11 @@ def measurement_window(data):
             (orders["작업물"] == data[3]) & 
             (orders["작업량(kg)"] == data[4]), 
             "현재 단계"
-        ] = "2: 측량 완료"
+        ] = f"2: 측량 완료({user})"
         orders.to_csv(file_name, index=False)
         if os.path.isfile(save_name):
             saving = pd.read_csv(save_name)
-            data.append("위성진") #작업자 넣을 곳
+            data.append(user) #작업자 넣을 곳
             data.append("/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()]))
             data.append(sum([now_labels[x][1] for x in now_labels.keys()]))
             print(saving)
@@ -292,7 +292,7 @@ def measurement_window(data):
         "작업물": [data[3]],
         "작업량(kg)": [data[4]],
         "배합 가마": [data[5]],
-        "측량자": ["위성진"], # 작업자 넣을 곳
+        "측량자": [user], # 작업자 넣을 곳
         "측량 결과":["/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()])],
         "측량 총량":[sum([now_labels[x][1] for x in now_labels.keys()])]
         })
@@ -300,26 +300,18 @@ def measurement_window(data):
 
         window.destroy()
 
-    def cancel(data):
-        save_name = data_path + "/" + today + "_측정완료.csv"
+    def cancel():
         orders = pd.read_csv(file_name)
-
-        orders.loc[
-            (orders["지시자"] == data[1]) & 
-            (orders["지시 시간"] == data[2]) & 
-            (orders["작업물"] == data[3]) & 
-            (orders["작업량(kg)"] == data[4]), 
-            "현재 단계"
-        ] = "0: 작업 전"
-        print(orders)
         orders.to_csv(file_name, index=False)
 
         window.destroy()
+    user_combo = ctk.CTkComboBox(left_frame, values=config["작업자"]["측량자"], font=("Helvetica", 20, "bold"), height = 50)
+    user_combo.grid(row=1, column=0, sticky="s", pady=10, padx = 10)
 
-    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 500)
+    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 450)
     done_button.grid(row=2, column=0, sticky="s", pady=10, padx = 10)
 
-    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 500)
+    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 450)
     cancel_button.grid(row=3, column=0, sticky="s", pady=10, padx = 10)
 
     update_time()

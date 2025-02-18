@@ -9,7 +9,7 @@ from main_menu.config_menu import config_start
 from main_menu.check import check_right
 import os
 import sys
-from PIL import Image, ImageTk
+from PIL import Image
 
 BASE_DIR = os.path.dirname(sys.executable)
 

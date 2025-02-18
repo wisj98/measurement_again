@@ -93,7 +93,7 @@ def order_start():
                     tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])  # 구분선 추가
 
         tree.pack(fill="both", expand=True, padx=10, pady=10)
-        window.after(5000, refresh_tree)
+        window.after(20000, refresh_tree)
 
     refresh_tree()
 

@@ -10,13 +10,13 @@ def config_start():
     window.geometry("600x400")
     window.title("환경 설정")
 
-    root_button = ctk.CTkButton(master=window, text="메인 경로 설정", command=root)
+    root_button = ctk.CTkButton(master=window, text="메인 경로 설정", command=root, height =90, width = 300, font=("Helvetica", 30, "bold"))
     root_button.pack(pady=20, padx=20)
 
-    user_button = ctk.CTkButton(master=window, text="작업자 설정", command=user_)
+    user_button = ctk.CTkButton(master=window, text="작업자 설정", command=user_, height =90, width = 300, font=("Helvetica", 30, "bold"))
     user_button.pack(pady=20, padx=20)
 
-    right_button = ctk.CTkButton(master=window, text="권한 설정", command=right)
+    right_button = ctk.CTkButton(master=window, text="권한 설정", command=right, height =90, width = 300, font=("Helvetica", 30, "bold"))
     right_button.pack(pady=20, padx=20)
 
     window.mainloop()
@@ -26,7 +26,7 @@ def root():
     root_.geometry("700x150")
     root_.title("메인 경로 설정")
 
-    path_label = ctk.CTkLabel(root_, text=f"현재 경로: {config["경로"]}", wraplength=350, anchor="w")
+    path_label = ctk.CTkLabel(root_, text=f"현재 경로: {config["경로"]}", wraplength=350, anchor="w", font=("Helvetica", 30, "bold"))
     path_label.pack(pady=20, padx=10)
 
     def set_new_path():
@@ -37,14 +37,14 @@ def root():
             with open("config.pickle","wb") as f:
                 pickle.dump(config, f)
     
-    set_path_button = ctk.CTkButton(root_, text="새로운 경로 지정", command=set_new_path)
+    set_path_button = ctk.CTkButton(root_, text="새로운 경로 지정", command=set_new_path, font=("Helvetica", 30, "bold"))
     set_path_button.pack(pady=10)
 
     root_.mainloop()
 
 def right():
     right_ = ctk.CTk()
-    right_.geometry("200x300")
+    right_.geometry("220x350")
     right_.title("권한 설정")
 
     checkbox_vars = {}
@@ -53,7 +53,7 @@ def right():
         for i, (key, value) in enumerate(config["권한"].items()):
             checkbox_vars[key] = ctk.BooleanVar(value=value)
             checkbox = ctk.CTkCheckBox(
-                right_, text=key, variable=checkbox_vars[key]
+                right_, text=key, variable=checkbox_vars[key], font=("Helvetica", 30, "bold")
             )
             checkbox.pack(pady=5, padx=10, anchor="w")
 
@@ -65,7 +65,7 @@ def right():
 
     create_checkboxes()
 
-    save_button = ctk.CTkButton(right_, text="저장하기", command=save_config)
+    save_button = ctk.CTkButton(right_, text="저장하기", command=save_config, height =90, width = 200, font=("Helvetica", 30, "bold"))
     save_button.pack(pady=20)
 
     right_.mainloop()

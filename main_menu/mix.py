@@ -19,7 +19,7 @@ file_name = data_path + "/" + today + "_작업지시.csv"
 def mix_start():
     if os.path.isfile(file_name):
         orders = pd.read_csv(file_name)
-        orders_ = orders[orders["현재 단계"] == "2: 측량 완료"]
+        orders_ = orders[orders["현재 단계"].str.startswith("2")]
     else:
         data = {
             "작업일": [],
@@ -46,7 +46,7 @@ def mix_start():
     def refresh_tree():
         if os.path.isfile(file_name):
             orders = pd.read_csv(file_name)
-        orders_ = orders[orders["현재 단계"] == "2: 측량 완료"]
+        orders_ = orders[orders["현재 단계"].str.startswith("2")]
         tree.delete(*tree.get_children())
 
         for col in orders_.columns:
@@ -54,7 +54,9 @@ def mix_start():
             tree.column(col, width=100, anchor="center")
 
         orders_sorted = orders_.sort_values(by="현재 단계")
-        grouped = orders_sorted.groupby("현재 단계")
+        
+        # "현재 단계"의 첫 글자로 그룹화
+        grouped = orders_sorted.groupby(orders_sorted["현재 단계"].str[0])
 
         for stage, group in grouped:
             for _, row in group.iterrows():
@@ -62,6 +64,7 @@ def mix_start():
             tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])
 
         tree.pack(fill="both", expand=True, padx=10, pady=10)
+        window.after(20000, refresh_tree)
 
     def update_time():
         now = datetime.now()
@@ -97,7 +100,6 @@ def mix_start():
                             break
             update = orders[orders.apply(lambda row: list(row) in selected_rows, axis=1)].index
 
-            orders.loc[update, "현재 단계"] = "1: 측량 진행 중"
             orders.to_csv(data_path + "/" + today + "_작업지시.csv", index=False)
             print(selected_rows)
             measurement_window(selected_rows[0])
@@ -202,14 +204,14 @@ def measurement_window(data):
     
     def save(data):
         orders = pd.read_csv(file_name)
-
+        user = user_combo.get()
         orders.loc[
             (orders["지시자"] == data[1]) & 
             (orders["지시 시간"] == data[2]) & 
             (orders["작업물"] == data[3]) & 
             (orders["작업량(kg)"] == data[4]), 
             "현재 단계"
-        ] = "4: 배합 완료"
+        ] = f"4: 배합 완료({user})"
         print(orders)
         orders.to_csv(file_name, index=False)
 
@@ -218,22 +220,17 @@ def measurement_window(data):
     def cancel(data):
         orders = pd.read_csv(file_name)
 
-        orders.loc[
-            (orders["지시자"] == data[1]) & 
-            (orders["지시 시간"] == data[2]) & 
-            (orders["작업물"] == data[3]) & 
-            (orders["작업량(kg)"] == data[4]), 
-            "현재 단계"
-        ] = "2: 측량 완료"
-        print(orders)
         orders.to_csv(file_name, index=False)
 
         window.destroy()
 
-    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 500)
+    user_combo = ctk.CTkComboBox(left_frame, values=config["작업자"]["배합자"], font=("Helvetica", 20, "bold"), height = 50)
+    user_combo.grid(row=1, column=0, sticky="s", pady=10, padx = 10)
+
+    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 450)
     done_button.grid(row=2, column=0, sticky="s", pady=10, padx = 10)
 
-    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 500)
+    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 450)
     cancel_button.grid(row=3, column=0, sticky="s", pady=10, padx = 10)
     update_time()
     window.mainloop()
