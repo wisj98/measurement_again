@@ -83,15 +83,16 @@ def ingredient_manage():
     tree = ttk.Treeview(window, columns=list(ingredients.columns), show="headings")
 
     def refresh_tree():
+        ingredients = pd.read_csv(file_name)
         tree.delete(*tree.get_children())
 
         for col in ingredients.columns:
             tree.heading(col, text=col)
             tree.column(col, width=100, anchor="center")
 
-        ingredients_sorted = ingredients.sort_values(by="원료 코드")
+        ingredients_sorted = ingredients.sort_values(by="원료명")
 
-        grouped = ingredients_sorted.groupby("원료 코드")
+        grouped = ingredients_sorted.groupby("원료명")
 
         for stage, group in grouped:
             for _, row in group.iterrows():
@@ -161,6 +162,7 @@ def ingredient_manage():
                 "현재량(kg)": L
             }
             ingredients = pd.concat([ingredients, pd.DataFrame(new_ingredient, index=[0])], ignore_index=True)
+            ingredients.to_csv(file_name, index=False)
             refresh_tree()
             add_window.destroy()
 
@@ -169,7 +171,6 @@ def ingredient_manage():
 
         add_window.mainloop()
     def delete_order():
-        # 선택된 항목 가져오기
         selected_items = tree.selection()
         if not selected_items:
             CTkMessagebox(title="알림", message="삭제할 항목을 선택해주세요.", icon="cancel")
@@ -197,12 +198,11 @@ def ingredient_manage():
                     
             # DataFrame에서 행 삭제
             ingredients.drop(indices_to_drop, inplace=True)
-
             ingredients = ingredients.reset_index(drop=True)
+            ingredients.to_csv(file_name, index=False)
             refresh_tree()
 
     def save_data():
-        ingredients.to_csv(file_name, index=False)
         window.destroy()
 
     # 버튼 프레임 생성
@@ -216,7 +216,7 @@ def ingredient_manage():
     delete_button = ctk.CTkButton(button_frame, text="재고 삭제", command=delete_order, height=100, width= 300, font=("Helvetica", 40, "bold"))
     delete_button.pack(side="left", padx=10)
 
-    save_button = ctk.CTkButton(button_frame, text="저장", command=save_data, height=100, width= 300, font=("Helvetica", 40, "bold"))
+    save_button = ctk.CTkButton(button_frame, text="종료", command=save_data, height=100, width= 300, font=("Helvetica", 40, "bold"))
     save_button.pack(side="left", padx=10)
 
     window.mainloop()
