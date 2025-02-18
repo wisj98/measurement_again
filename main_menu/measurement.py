@@ -6,7 +6,7 @@ from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
-# from main_menu.measuring import measuring
+from main_menu.measuring import measuring
 
 with open("config.pickle", "rb") as fr:
     config = pickle.load(fr)
