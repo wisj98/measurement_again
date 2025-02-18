@@ -6,7 +6,7 @@ from main_menu.mix import mix_start
 from main_menu.recipe import recipe_manage
 from main_menu.ingredient import ingredient_manage
 from main_menu.config_menu import config_start
-from main_menu.check import check_right
+from main_menu.check import check_right, check_web
 import os
 import sys
 from PIL import Image
@@ -16,13 +16,23 @@ BASE_DIR = os.path.dirname(sys.executable)
 def login():
     username = username_entry.get()
     password = password_entry.get()
-
-    if 1:
+    token = check_web(username, password)
+    if token == True:
         result_label.configure(text="로그인 성공!")
         app.destroy()
         main_menu()
     else:
-        result_label.configure(text="로그인 실패!")
+        popup = ctk.CTk()
+        popup.title("로그인 실패")
+        popup.geometry("600x300")
+        
+        label = ctk.CTkLabel(popup, text=f"로그인 실패!\n\n\n{token}", font=("Arial", 20, "bold"))
+        label.pack(expand=True, padx=20, pady=20)
+        
+        button = ctk.CTkButton(popup, text="확인", command=popup.destroy)
+        button.pack(pady=10)
+
+        popup.mainloop()
 
 def main_menu():
     mainmenu = ctk.CTk()

@@ -45,6 +45,20 @@ else:
 
 def ingredient_manage():
     ingredients = pd.read_csv(file_name)
+    invalid_rows = ingredients[ingredients["현재량(kg)"] <= 0]
+
+    for index, row in invalid_rows.iterrows():
+        ingredient_name = row["원료명"]
+        amount = row["현재량(kg)"]
+
+        target_row = ingredients[(ingredients["원료명"] == ingredient_name) & (ingredients["현재량(kg)"] > 0)].sort_values("유통기한").head(1)
+
+        if not target_row.empty:
+            target_index = target_row.index[0]
+            ingredients.at[target_index, "현재량(kg)"] += amount
+
+        ingredients.drop(index, inplace=True)
+
     window = ctk.CTk()
     window.title("재고 관리")
     window.attributes('-fullscreen', True)
