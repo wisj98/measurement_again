@@ -58,6 +58,7 @@ def ingredient_manage():
             ingredients.at[target_index, "현재량(kg)"] += amount
 
         ingredients.drop(index, inplace=True)
+    ingredients.to_csv(file_name, index=False)
 
     window = ctk.CTk()
     window.title("재고 관리")
