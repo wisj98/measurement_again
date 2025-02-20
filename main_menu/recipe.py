@@ -52,8 +52,6 @@ def recipe_manage():
     tree.bind("<<TreeviewSelect>>", on_tree_select)
 
     def adding_recipe():
-        if not selected_now:
-            return
         add_recipe_window = ctk.CTk()
         add_recipe_window.geometry("1200x500")
         add_recipe_window.title("레시피 추가")
@@ -175,7 +173,7 @@ def recipe_manage():
     button_frame = ctk.CTkFrame(master=recipe_window)
     button_frame.pack(pady=10)
 
-    add_button = ctk.CTkButton(master=button_frame, text="레시피 수정", command=adding_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
+    add_button = ctk.CTkButton(master=button_frame, text="레시피 추가", command=adding_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
     add_button.grid(row=0, column=0, padx=10)
 
     fix_button = ctk.CTkButton(master=button_frame, text="레시피 수정", command=fixing_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
