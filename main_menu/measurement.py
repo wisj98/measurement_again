@@ -301,9 +301,6 @@ def measurement_window(data):
         window.destroy()
 
     def cancel():
-        orders = pd.read_csv(file_name)
-        orders.to_csv(file_name, index=False)
-
         window.destroy()
     user_combo = ctk.CTkComboBox(left_frame, values=config["작업자"]["측량자"], font=("Helvetica", 20, "bold"), height = 50)
     user_combo.grid(row=1, column=0, sticky="s", pady=10, padx = 10)
@@ -311,7 +308,7 @@ def measurement_window(data):
     done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 450)
     done_button.grid(row=2, column=0, sticky="s", pady=10, padx = 10)
 
-    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(data), height = 450)
+    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(), height = 450)
     cancel_button.grid(row=3, column=0, sticky="s", pady=10, padx = 10)
 
     update_time()

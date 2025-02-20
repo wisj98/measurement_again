@@ -51,6 +51,58 @@ def recipe_manage():
 
     tree.bind("<<TreeviewSelect>>", on_tree_select)
 
+    def adding_recipe():
+        if not selected_now:
+            return
+        add_recipe_window = ctk.CTk()
+        add_recipe_window.geometry("1200x500")
+        add_recipe_window.title("레시피 추가")
+
+        def new_recipe():
+            try:
+                new = entry.get().split("=")
+                print(new[1].split("+"))
+                recipes[new[0]]["배합비"] = [[x.split("/")[0], float(x.split("/")[1]), float(x.split("/")[2])] for x in new[1].split("+")]
+                recipes[new[0]]["배합법"] = entry_.get().split(",")
+                with open(file_path, "wb") as fw:
+                    pickle.dump(recipes, fw)
+                tree.delete(*tree.get_children())  # 트리뷰 초기화
+                for recipe in sorted(recipes.keys()):
+                    tree.insert("", "end", iid=recipe, text=recipe)  # 트리뷰 다시 추가
+                add_recipe_window.destroy()
+            except:
+                warning_window = ctk.CTk()
+                warning_window.geometry("300x100")
+                warning_window.title("경고")
+
+                warning_label = ctk.CTkLabel(master=warning_window, text="양식에 맞춰서 작성해 주세요.")
+                warning_label.pack(pady=10, padx=20)
+
+                def close_warning_window():
+                    warning_window.destroy()
+
+                close_button = ctk.CTkButton(master=warning_window, text="닫기", command=close_warning_window)
+                close_button.pack(pady=10, padx=20)
+
+                warning_window.mainloop()
+
+        label = ctk.CTkLabel(master=add_recipe_window, text="배합비를 입력해주세요. \n예시)용액_1=우유/10/1+식초/5/1+간장/3/1", font=("Arial", 24, "bold"))
+        label.pack(pady=(20, 0), padx=20)
+
+        entry = ctk.CTkEntry(master=add_recipe_window, height=50, font=("Arial", 24, "bold"))
+        entry.pack(pady=0, padx=20, fill="x", expand=True)
+
+        label_ = ctk.CTkLabel(master=add_recipe_window, text="배합법을 입력해주세요. \n예시)우유 붓기,식초 붓기,섞기,간장 붓기", font=("Arial", 24, "bold"))
+        label_.pack(pady=(0, 0), padx=20)
+
+        entry_ = ctk.CTkEntry(master=add_recipe_window, height=50, font=("Arial", 24, "bold"))
+        entry_.pack(pady=0, padx=20, fill="x", expand=True)
+
+        add_button = ctk.CTkButton(master=add_recipe_window, text="수정", command=new_recipe, font=("Arial", 24, "bold"), height=50, width=200)
+        add_button.pack(pady=10, padx=20)
+
+        add_recipe_window.mainloop()
+
     def fixing_recipe():
         if not selected_now:
             return
@@ -123,11 +175,14 @@ def recipe_manage():
     button_frame = ctk.CTkFrame(master=recipe_window)
     button_frame.pack(pady=10)
 
+    add_button = ctk.CTkButton(master=button_frame, text="레시피 수정", command=adding_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
+    add_button.grid(row=0, column=0, padx=10)
+
     fix_button = ctk.CTkButton(master=button_frame, text="레시피 수정", command=fixing_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
-    fix_button.grid(row=0, column=0, padx=10)
+    fix_button.grid(row=0, column=1, padx=10)
 
     delete_button = ctk.CTkButton(master=button_frame, text="레시피 삭제", command=delete_recipe, font=("Helvetica", 20, "bold"), width=100, height=30)
-    delete_button.grid(row=0, column=1, padx=10)
+    delete_button.grid(row=0, column=2, padx=10)
 
     recipe_window.mainloop()
 
