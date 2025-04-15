@@ -41,35 +41,58 @@ def login():
 def main_menu():
     mainmenu = ctk.CTk()
     mainmenu.title("메인 메뉴")
-    mainmenu.attributes('-fullscreen', True)
+    mainmenu.geometry("600x700")
 
-    bg_image = ctk.CTkImage(dark_image=Image.open("factory.jpg"), size=(mainmenu.winfo_screenwidth(), mainmenu.winfo_screenheight()))
+    bg_image = ctk.CTkImage(dark_image=Image.open("pictures/background.jpg"), size=(mainmenu.winfo_screenwidth(), mainmenu.winfo_screenheight()))
 
     # 배경 레이블 생성 (이미지를 Label 위에 띄우기)
     bg_label = ctk.CTkLabel(mainmenu, image=bg_image, text="")
     bg_label.place(relwidth=1, relheight=1)
 
     # 버튼 생성
-    order_button = ctk.CTkButton(master=mainmenu, text="작업 지시", command=lambda: order_start() if check_right("order") else no_right("order"), font=("Helvetica", 40, "bold"), width=500, height=100)  # 폰트 크기, width, height 5배 조정
-    order_button.pack(pady=(100,10), padx=40)  # pady, padx 2배 조정
+    gear_image = ctk.CTkImage(light_image=Image.open("pictures/config.png"), size=(24, 24))
+    config_button = ctk.CTkButton(
+    master=mainmenu,
+    image=gear_image,
+    text="",
+    command=admin_login,
+    width=40,
+    height=40,
+    corner_radius=0,
+    fg_color="#52ADD4",
+    hover_color="#52ADD4",  
+    bg_color="transparent")
+    config_button.place(relx=1.0, rely=0.0, anchor="ne", x=-10, y=10)
+    
+    order_button = ctk.CTkButton(master=mainmenu, text="작업 지시", command=lambda: order_start() if check_right("order") else no_right("order"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)  # 폰트 크기, width, height 5배 조정
+    order_button.pack(pady=(50,15), padx=40)
 
-    measure_button = ctk.CTkButton(master=mainmenu, text="측량 시작", command=lambda: measurement_start() if check_right("measurement") else no_right("measurement"), font=("Helvetica", 40, "bold"), width=500, height=100)
-    measure_button.pack(pady=10, padx=40)
+    measure_button = ctk.CTkButton(master=mainmenu, text="칭량 작업", command=lambda: measurement_start() if check_right("measurement") else no_right("measurement"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    measure_button.pack(pady=15, padx=40)
 
-    mix_button = ctk.CTkButton(master=mainmenu, text="배합 시작", command=lambda: mix_start() if check_right("mix") else no_right("mix"), font=("Helvetica", 40, "bold"), width=500, height=100)
-    mix_button.pack(pady=10, padx=40)
+    mix_button = ctk.CTkButton(master=mainmenu, text="배합 작업", command=lambda: mix_start() if check_right("mix") else no_right("mix"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    mix_button.pack(pady=15, padx=40)
 
-    recipe_button = ctk.CTkButton(master=mainmenu, text="BOM 관리", command=lambda: recipe_manage() if check_right("recipe") else no_right("recipe"), font=("Helvetica", 40, "bold"), width=500, height=100)
-    recipe_button.pack(pady=10, padx=40)
+    recipe_button = ctk.CTkButton(master=mainmenu, text="BOM 관리", command=lambda: recipe_manage() if check_right("recipe") else no_right("recipe"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    recipe_button.pack(pady=15, padx=40)
 
-    ingredient_button = ctk.CTkButton(master=mainmenu, text="원료 입고 관리", command=lambda: ingredient_manage() if check_right("ingredient") else no_right("ingredient"), font=("Helvetica", 40, "bold"), width=500, height=100)
-    ingredient_button.pack(pady=10, padx=40)
+    history_button = ctk.CTkButton(master=mainmenu, text="내역 조회", command=lambda: recipe_manage() if check_right("recipe") else no_right("recipe"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    history_button.pack(pady=15, padx=40)
 
-    config_button = ctk.CTkButton(master=mainmenu, text="환경 설정", command=admin_login, font=("Helvetica", 40, "bold"), width=500, height=100)
-    config_button.pack(pady=10, padx=40)
+    initial_button = ctk.CTkButton(master=mainmenu, text="기초 자료 입력", command=lambda: recipe_manage() if check_right("recipe") else no_right("recipe"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    initial_button.pack(pady=15, padx=40)
 
-    exit_button = ctk.CTkButton(master=mainmenu, text="프로그램 종료", command=mainmenu.destroy, font=("Helvetica", 40, "bold"), width=500, height=100)
-    exit_button.pack(pady=10, padx=40)
+    check_button = ctk.CTkButton(master=mainmenu, text="작업 전 점검사항 입력", command=lambda: recipe_manage() if check_right("recipe") else no_right("recipe"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    check_button.pack(pady=15, padx=40)
+
+    # ingredient_button = ctk.CTkButton(master=mainmenu, text="원료 입고 관리", command=lambda: ingredient_manage() if check_right("ingredient") else no_right("ingredient"), font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    # ingredient_button.pack(pady=15, padx=40)
+
+    # config_button = ctk.CTkButton(master=mainmenu, text="환경 설정", command=admin_login, font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    # config_button.pack(pady=15, padx=40)
+
+    exit_button = ctk.CTkButton(master=mainmenu, text="프로그램 종료", command=mainmenu.destroy, font=("pretendard medium", 14, "bold"), width=200, height=50, corner_radius=0)
+    exit_button.pack(pady=15, padx=40)
 
     mainmenu.mainloop()
 
@@ -133,19 +156,19 @@ app.grid_rowconfigure(4, weight=1)
 _ = "생산 관리 시스템"
 if check_measure == False:
     _ = "생산 관리 시스템\n(저울이 연결되지 않은 상태입니다.)"
-title_label = ctk.CTkLabel(master=app, text=_, font=("Helvetica", 80, "bold"))
+title_label = ctk.CTkLabel(master=app, text=_, font=("pretendard medium", 80, "bold"))
 title_label.grid(row=0, column=0, columnspan=2, pady=(150, 0), sticky="n")  # 중앙 배치
 
 # 아이디 레이블 및 입력 필드
-username_label = ctk.CTkLabel(master=app, text="아이디:", font=("Helvetica", 40, "bold"))
+username_label = ctk.CTkLabel(master=app, text="아이디:", font=("pretendard medium", 40, "bold"))
 username_label.grid(row=1, column=0, padx=10, pady=5, sticky="e")  # 오른쪽 정렬
-username_entry = ctk.CTkEntry(master=app, placeholder_text="아이디를 입력하세요", width=800, font=("Helvetica", 40, "bold"))
+username_entry = ctk.CTkEntry(master=app, placeholder_text="아이디를 입력하세요", width=800, font=("pretendard medium", 40, "bold"))
 username_entry.grid(row=1, column=1, padx=10, pady=5, sticky="w")  # 왼쪽 정렬
 
 # 비밀번호 레이블 및 입력 필드
-password_label = ctk.CTkLabel(master=app, text="비밀번호:", font=("Helvetica", 40, "bold"))
+password_label = ctk.CTkLabel(master=app, text="비밀번호:", font=("pretendard medium", 40, "bold"))
 password_label.grid(row=2, column=0, padx=10, pady=5, sticky="e")
-password_entry = ctk.CTkEntry(master=app, placeholder_text="비밀번호를 입력하세요", show="*", width=800, font=("Helvetica", 40, "bold"))
+password_entry = ctk.CTkEntry(master=app, placeholder_text="비밀번호를 입력하세요", show="*", width=800, font=("pretendard medium", 40, "bold"))
 password_entry.grid(row=2, column=1, padx=10, pady=5, sticky="w")
 
 # 버튼 프레임
@@ -153,13 +176,13 @@ button_frame = ctk.CTkFrame(master=app, fg_color="#F0F0F0")
 button_frame.grid(row=3, column=0, columnspan=2, pady=60, sticky="n")
 
 # 로그인 및 종료 버튼
-login_button = ctk.CTkButton(master=button_frame, text="로그인",command=login ,width=500, height=150, font=("Helvetica", 60, "bold"))
+login_button = ctk.CTkButton(master=button_frame, text="로그인",command=login ,width=500, height=150, font=("pretendard medium", 60, "bold"))
 login_button.pack(side="left", padx=40)
-exit_button = ctk.CTkButton(master=button_frame, text="종료", command=app.quit, width=500, height=150, font=("Helvetica", 60, "bold"))
+exit_button = ctk.CTkButton(master=button_frame, text="종료", command=app.quit, width=500, height=150, font=("pretendard medium", 60, "bold"))
 exit_button.pack(side="left", padx=40)
 
 # 결과 레이블
-result_label = ctk.CTkLabel(master=app, text="", font=("Helvetica", 40))
+result_label = ctk.CTkLabel(master=app, text="", font=("pretendard medium", 40))
 result_label.grid(row=4, column=0, columnspan=2, pady=40, sticky="n")
 
 # 앱 실행

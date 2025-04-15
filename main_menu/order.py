@@ -5,34 +5,34 @@ import os
 from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
-from main_menu.style import configure_treeview_style
-
-with open("config.pickle", "rb") as fr:
-    config = pickle.load(fr)
-
-data_path = config["경로"] + "/data"
-if not os.path.exists(data_path):
-    os.makedirs(data_path)
-today = datetime.today().strftime("%Y_%m_%d")
-file_name = data_path + "/" + today + "_작업지시.csv"
-if os.path.isfile(file_name):
-    orders = pd.read_csv(file_name)
-    print(file_name)
-else:
-    # test
-    data = {
-        "작업일": [],
-        "지시자": [],
-        "지시 시간": [],
-        "작업물": [],
-        "작업량(kg)": [],
-        "배합 가마": [],
-         "현재 단계": []
-    }
-    orders = pd.DataFrame(data)
-    orders.to_csv(file_name, index=False)
 
 def order_start():
+    #---------------------------------------------------------------------------------------------------------
+    with open("config.pickle", "rb") as fr:
+        config = pickle.load(fr)
+
+    data_path = config["경로"] + "/data"
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+    today = datetime.today().strftime("%Y_%m_%d")
+    file_name = data_path + "/" + today + "_작업지시.csv"
+    if os.path.isfile(file_name):
+        orders = pd.read_csv(file_name)
+        print(file_name)
+    else:
+        # test
+        data = {
+            "작업일": [],
+            "지시자": [],
+            "지시 시간": [],
+            "제품명": [],
+            "작업량(kg)": [],
+            "배합 가마": [],
+            "현재 단계": []
+        }
+        orders = pd.DataFrame(data)
+        orders.to_csv(file_name, index=False)
+    #---------------------------------------------------------------------------------------------------------
     orders = pd.read_csv(file_name)
     window = ctk.CTk()
     window.title("작업 지시")
@@ -41,7 +41,10 @@ def order_start():
     up_frame = ctk.CTkFrame(master=window, height=40)
     up_frame.pack(side="top", fill="x")
 
-    time_label = ctk.CTkLabel(window, font=("Arial", 30, "bold"))
+    title_label = ctk.CTkLabel(window, font=("pretendard medium", 14, "bold"), text = "작업지시")
+    title_label.place(relx=0.0, x=10, y=10, anchor="nw")
+
+    time_label = ctk.CTkLabel(window, font=("pretendard medium", 14, "bold"))
     time_label.place(relx=1.0, x=-10, y=10, anchor="ne")
 
     def update_time():
@@ -51,51 +54,60 @@ def order_start():
         window.after(1000, update_time)
 
     update_time()
-    configure_treeview_style(window)
-    tree = ttk.Treeview(window, columns=list(orders.columns), show="headings")
+    #---------------------------------------------------------------------------------------------------------
+    columns_frame = ctk.CTkFrame(master=window, height=40)
+    columns_frame.pack(side="top", fill="x")
 
-    def refresh_tree():
-        orders = pd.read_csv(file_name)
-        tree.delete(*tree.get_children())  # 기존 트리의 모든 행 삭제
+    column_titles = [
+        "작업일", "지시자", "지시 시간", "제품명", "작업량(Kg)",
+        "배합가마", "현재단계", "내역", "확정", "삭제"
+    ]
 
-        # 트리 컬럼 업데이트 (orders가 비어도 컬럼은 유지)
-        if orders.empty:
-            tree["columns"] = list(orders.columns)  # 컬럼 업데이트
-            tree["show"] = "headings"  # 컬럼 헤더가 표시되도록 설정
+    # column 수에 맞게 weight 지정 (동일한 비율로 배분)
+    column_widths = [178, 178, 178, 300, 178, 178, 178, 178, 178, 178]
 
-            for col in orders.columns:
-                tree.heading(col, text=col)
-                tree.column(col, anchor="center", width=100)  # 기본 너비 설정
-        else:
-            # 컬럼별 동적 너비 설정
-            col_widths = {}
-            for col in orders.columns:
-                max_content_width = orders[col].astype(str).apply(len).max() if not orders[col].empty else 0
-                max_header_width = len(col)  
-                max_width = max(max_content_width, max_header_width) * 10  
-                col_widths[col] = max_width
+    for idx, title in enumerate(column_titles):
+        label = ctk.CTkLabel(
+            master=columns_frame,
+            text=title,
+            font=("pretendard medium", 14, "bold"),
+            width=column_widths[idx],
+            height=40,
+            anchor="center",  # 가운데 정렬
+            fg_color="#52ADD4",  # 이전에 조정한 컬러
+            text_color="black"
+        )
+        if idx == 0: label.grid(row=0, column=idx, sticky="nsew", padx=[7,1])
+        else: label.grid(row=0, column=idx, sticky="nsew", padx=1)
+    #---------------------------------------------------------------------------------------------------------
+    inner_frame = ctk.CTkScrollableFrame(master=window, height=900)
+    inner_frame.pack(side="top", fill="x")
 
-            tree["columns"] = list(orders.columns)
-            tree["show"] = "headings"  
+    def refresh_window(orders = False):
+        if not orders:
+            orders = pd.read_csv(file_name)
+        for widget in inner_frame.winfo_children():
+            widget.destroy()
+        for i in range(len(orders)):
+            order_frame = ctk.CTkFrame(master=inner_frame, height=45)
+            order_frame.pack(side="top", fill="x")
 
-            for col in orders.columns:
-                tree.heading(col, text=col)
-                tree.column(col, anchor="center", width=col_widths[col])
+            for idx, title in enumerate(orders.columns):
+                label = ctk.CTkLabel(
+                    master=order_frame,
+                    text=orders.iloc[idx][title],
+                    font=("pretendard medium", 12, "bold"),
+                    width=column_widths[idx],
+                    height=40,
+                    anchor="center",  # 가운데 정렬
+                    fg_color="#52ADD4",  # 이전에 조정한 컬러
+                    text_color="black"
+                )
+                label.grid(row=0, column=idx, sticky="nsew", padx=1)
+        
+        window.after(20000, refresh_window)
 
-            # 데이터 정렬 후 삽입
-            if "현재 단계" in orders.columns:
-                orders_sorted = orders.sort_values(by="현재 단계")
-                grouped = orders_sorted.groupby("현재 단계")
-
-                for stage, group in grouped:
-                    for _, row in group.iterrows():
-                        tree.insert("", "end", values=list(row))
-                    tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])  # 구분선 추가
-
-        tree.pack(fill="both", expand=True, padx=10, pady=10)
-        window.after(20000, refresh_tree)
-
-    refresh_tree()
+    refresh_window()
 
     def add_order():
         add_window = ctk.CTk()
@@ -154,7 +166,7 @@ def order_start():
             }
             orders = pd.concat([orders, pd.DataFrame(new_order, index=[0])], ignore_index=True)
             orders.to_csv(file_name, index=False)
-            refresh_tree()
+            refresh_window()
             add_window.destroy()
 
         submit_button = ctk.CTkButton(add_window, text="추가", font=("Helvetica", 50, "bold"), command=submit_order, width = 300, height = 75)
@@ -195,7 +207,7 @@ def order_start():
 
             orders = orders.reset_index(drop=True)
             orders.to_csv(file_name, index=False)
-            refresh_tree()
+            refresh_window()
 
     def save_data():
         window.destroy()
