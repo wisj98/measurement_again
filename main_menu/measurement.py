@@ -5,65 +5,59 @@ import os
 from datetime import datetime
 import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
-from main_menu.style import configure_treeview_style
-from main_menu.measuring import measuring
-
-with open("config.pickle", "rb") as fr:
-    config = pickle.load(fr)
-
-data_path = config["경로"] + "/data"
-if not os.path.exists(data_path):
-    os.makedirs(data_path)
-today = datetime.today().strftime("%Y_%m_%d")
-file_name = data_path + "/" + today + "_작업지시.csv"
+# from main_menu.style import configure_treeview_style
+# from main_menu.measuring import measuring
 
 def measurement_start():
+#-------------------------------------------------------------------------
+    with open("config.pickle", "rb") as fr:
+        config = pickle.load(fr)
+
+    data_path = config["경로"] + "/data"
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+    today = datetime.today().strftime("%Y_%m_%d")
+    file_name = data_path + "/" + today + "_작업지시.csv"
+
     if os.path.isfile(file_name):
         orders = pd.read_csv(file_name)
-        orders_ = orders[orders["현재 단계"] == "0: 작업 전"]
+        orders_ = orders[orders["현재 단계"] == "1:작업 전"]
     else:
         data = {
             "작업일": [],
             "지시자": [],
             "지시 시간": [],
-            "작업물": [],
+            "제품명": [],
             "작업량(kg)": [],
             "배합 가마": [],
             "현재 단계": []
         }
-        orders = pd.DataFrame(data)
-        orders.to_csv(data_path + "/" + today + "_작업지시.csv", index=False)
-
+        orders = pd.DataFrame(data)[["작업일", "지시자", "지시 시간", "제품명", "작업량(kg)", "배합 가마", "현재 단계"]]
+        orders.to_csv(file_name, index=False)
+#-------------------------------------------------------------------------
     window = ctk.CTk()
     window.title("작업 지시")
     window.attributes('-fullscreen', True)
 
-    up_frame = ctk.CTkFrame(master=window, height=40)
-    up_frame.pack(side="top", fill="x")
+    up_frame = ctk.CTkFrame(master=window, height=40, fg_color="#333333", corner_radius=0)
+    up_frame.pack(side="top", fill="x",pady=[0,5])
 
-    time_label = ctk.CTkLabel(window, font=("Arial", 30, "bold"))
+    title_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text="칭량 작업",
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
+    title_label.place(relx=0.0, x=10, y=10, anchor="nw")
+
+    time_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
     time_label.place(relx=1.0, x=-10, y=10, anchor="ne")
-
-    def refresh_tree():
-        if os.path.isfile(file_name):
-            orders = pd.read_csv(file_name)
-        orders_ = orders[orders["현재 단계"] == "0: 작업 전"]
-        tree.delete(*tree.get_children())
-
-        for col in orders_.columns:
-            tree.heading(col, text=col)
-            tree.column(col, width=100, anchor="center")
-
-        orders_sorted = orders_.sort_values(by="현재 단계")
-        grouped = orders_sorted.groupby("현재 단계")
-
-        for stage, group in grouped:
-            for _, row in group.iterrows():
-                tree.insert("", "end", values=list(row))
-            tree.insert("", "end", values=["" for _ in range(len(orders_sorted.columns))])
-        
-        tree.pack(fill="both", expand=True, padx=10, pady=10)
-        window.after(20000, refresh_tree)
 
     def update_time():
         now = datetime.now()
@@ -72,37 +66,86 @@ def measurement_start():
         window.after(1000, update_time)
 
     update_time()
-    configure_treeview_style(window)
-    tree = ttk.Treeview(window, columns=list(orders_.columns), show="headings")
+#-------------------------------------------------------------------------
+    columns_frame = ctk.CTkFrame(master=window, height=40)
+    columns_frame.pack(side="top", fill="x")
 
-    refresh_tree()
+    column_titles = [
+        "작업일", "지시자", "지시 시간", "제품명", "작업량(Kg)",
+        "배합가마", "현재단계", "내역", "작업 시작"
+    ]
 
-    def select():
-        global orders_
+    # column 수에 맞게 weight 지정 (동일한 비율로 배분)
+    column_widths = [197, 197, 197, 300, 197, 197, 197, 197, 197]
 
-        selected_items = tree.selection()
-        if not selected_items:
-            CTkMessagebox(title="알림", message="측정할 주문을 선택해주세요.", icon="cancel")
-            return
+    for idx, title in enumerate(column_titles):
+        label = ctk.CTkLabel(
+            master=columns_frame,
+            text=title,
+            font=("pretendard medium", 14, "bold"),
+            width=column_widths[idx],
+            height=40,
+            anchor="center",  # 가운데 정렬
+            fg_color="#52ADD4",  # 이전에 조정한 컬러
+            text_color="black"
+        )
+        if idx == 0: label.grid(row=0, column=idx, sticky="nsew", padx=[7,1])
+        else: label.grid(row=0, column=idx, sticky="nsew", padx=1)
+#-------------------------------------------------------------------------
+    inner_frame = ctk.CTkScrollableFrame(master=window, height=900)
+    inner_frame.pack(side="top", fill="x")
 
-        if CTkMessagebox(title="시작 확인", message="선택한 주문을 작업하시겠습니까?", icon="question").get():
-            selected_rows = [] 
+    def check(orders, idx):
+        print(orders.iloc[idx])
 
-            for item in selected_items:
-                item_values = tree.item(item, 'values')
-                for _, row in orders.iterrows():
-                    row_values = list(row)
-                    if len(item_values) == len(row_values):
-                        match = all(str(item_values[i]) == str(row_values[i]) for i in range(len(item_values)))  
-                        if match:
-                            selected_rows.append(row_values) 
-                            break
-            update = orders[orders.apply(lambda row: list(row) in selected_rows, axis=1)].index
-        
-            orders.to_csv(data_path + "/" + today + "_작업지시.csv", index=False)
-            print(selected_rows)
-            measurement_window(selected_rows[0])
+    def refresh_window(orders = False, refresh = False):
+        if type(orders) != pd.DataFrame: orders = pd.read_csv(file_name)
+        orders = orders.sort_values(by="현재 단계").reset_index(drop=True)
+        for widget in inner_frame.winfo_children():
+            widget.destroy()
+        for i in range(len(orders)):
+            order_frame = ctk.CTkFrame(master=inner_frame, height=45)
+            order_frame.pack(side="top", fill="x", pady=1)
 
+            for idx, title in enumerate(orders.columns):
+                label = ctk.CTkLabel(
+                    master=order_frame,
+                    text=orders.iloc[i][title],
+                    font=("pretendard medium", 12, "bold"),
+                    width=column_widths[idx],
+                    height=40,
+                    anchor="center", 
+                    fg_color="#BBBBBB",
+                    text_color="black", corner_radius=0
+                )
+                label.grid(row=0, column=idx, sticky="nsew", padx=1)
+            check_button = ctk.CTkButton(master=order_frame,
+                    text = "확인",font=("pretendard medium", 12, "bold"),
+                    width=column_widths[idx+1],
+                    height=40,
+                    anchor="center", 
+                    fg_color="#BBBBBB",
+                    text_color="black",
+                    command=lambda i=i, orders=orders: check(orders, i), corner_radius=0
+                    )
+            check_button.grid(row=0, column=idx+1, sticky="nsew", padx=1)
+
+            save_button = ctk.CTkButton(master=order_frame,
+                    text = "작업 시작",font=("pretendard medium", 12, "bold"),
+                    width=column_widths[idx+2],
+                    height=40,
+                    anchor="center", 
+                    fg_color="#BBBBBB",
+                    text_color="black",
+                    command=lambda i=i, orders=orders: work(orders.iloc[i]), corner_radius=0
+                    )
+            save_button.grid(row=0, column=idx+2, sticky="nsew", padx=1)
+
+        if refresh:
+            window.after(30000, lambda refresh=refresh: refresh_window(refresh==True))
+
+    refresh_window(refresh=True)
+#------------------------------------------------------------------------------------------------
     def save_data():
         window.destroy()
 
@@ -110,90 +153,108 @@ def measurement_start():
     button_frame = ctk.CTkFrame(window)
     button_frame.pack(pady=10)
 
-    select_button = ctk.CTkButton(button_frame, text="작업 시작", font=("Helvetica", 40, "bold"), command=select, height=100, width= 300)
-    select_button.pack(side="left", padx=10)
-
-    save_button = ctk.CTkButton(button_frame, text="종료하기", font=("Helvetica", 40, "bold"), command=save_data, height=100, width= 300)
-    save_button.pack(side="left", padx=10)
+    save_button = ctk.CTkButton(button_frame, text="종료하기", font=("pretendard medium", 40, "bold"), command=save_data, height=100, width= 300)
+    save_button.pack(side="left", padx=1)
 
     window.mainloop()
+#------------------------------------------------------------------------------------------------
+def work(order):
+    with open("config.pickle", "rb") as fr:
+        config = pickle.load(fr)
 
-def measurement_window(data):
-    data = data[:-1]
     window = ctk.CTk()
-    window.title("측량")
+    window.title("작업 지시")
     window.attributes('-fullscreen', True)
 
-    up_frame = ctk.CTkFrame(master=window, height=40)
-    up_frame.pack(side="top", fill="x")
+    up_frame = ctk.CTkFrame(master=window, height=40, fg_color="#333333", corner_radius=0)
+    up_frame.pack(side="top", fill="x",pady=[0,5])
 
-    time_label = ctk.CTkLabel(window, font=("Arial", 30, "bold"))
+    title_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text="칭량 작업",
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
+    title_label.place(relx=0.0, x=10, y=10, anchor="nw")
+
+    time_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
     time_label.place(relx=1.0, x=-10, y=10, anchor="ne")
-
-    info_label = ctk.CTkLabel(window, font=("Arial", 30, "bold"), text=f"지시자: {data[1]} | 지시 시간: {data[2]} | 제품 명: {data[3]} | 제조량: {data[4]}kg")
-    info_label.place(relx=0.0, x=10, y=10, anchor="nw")
-
-    frame_container = ctk.CTkFrame(master=window)
-    frame_container.pack(side="top", fill="both", expand=True)
-
-    left_frame = ctk.CTkFrame(master=frame_container, width=100)
-    left_frame.grid(row=0, column=0, sticky="nsew")
-
-    right_frame = ctk.CTkScrollableFrame(master=frame_container)
-    right_frame.grid(row=0, column=1, sticky="nsew")
-
-    frame_container.grid_columnconfigure(0, weight=0) 
-    frame_container.grid_columnconfigure(1, weight=1)
-    frame_container.grid_rowconfigure(0, weight=1)
 
     def update_time():
         now = datetime.now()
         formatted_time = now.strftime("현재 시각: %Y/%m/%d - %H:%M:%S")
         time_label.configure(text=formatted_time)
-        for i in now_labels.keys():
-            now_labels[i][0].configure(text =f"현재: {now_labels[i][1]}kg")
         window.after(1000, update_time)
 
-    with open(f"{config["경로"]}/recipe.pickle", "rb") as fr:
-        recipe = pickle.load(fr)[data[3]]['배합비']
-    whole = 0
-    for ingredient in recipe:
-        whole += ingredient[1]
-    for i in range(len(recipe)):
-        recipe[i][1] = recipe[i][1]/whole*data[4]
-        recipe[i][1], recipe[i][2] = round(recipe[i][1] - recipe[i][1]*recipe[i][2]/100,3), round(recipe[i][1] + recipe[i][1]*recipe[i][2]/100,3)
+    update_time()
+#------------------------------------------------------------------------------------------------
+    info_frame = ctk.CTkFrame(window, height = 400, fg_color="#BBBBBB", corner_radius=0, width=1500)
+    info_frame.pack(side="top",pady=[0,5], fill=None)
 
+    width = [300,300,300,500,300]
+    headers = ["작업일", "지시자", "지시 시간", "제품명", "작업량(kg)"]
+    for i, text in enumerate(headers):
+        label = ctk.CTkLabel(info_frame, text=text, font=("pretendard medium", 20, "bold"), fg_color="#AAAAAA", text_color="black", corner_radius=0, width=width[i], height=75)
+        label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
+
+    data = [order["작업일"], order['지시자'], order["지시 시간"], order["제품명"], order["작업량(kg)"]]
+    for i, text in enumerate(data):
+        label = ctk.CTkLabel(info_frame, text=text, font=("pretendard medium", 18, "bold"), fg_color="#AAAAAA", text_color="black", corner_radius=0, width=width[i], height=75)
+        label.grid(row=1, column=i, sticky="nsew", padx=1, pady=1)
+
+    with open(f"{config["경로"]}/recipe.pickle", "rb") as fr:
+        recipe = pickle.load(fr)[order["제품명"]]['배합비']
+
+    columns_frame = ctk.CTkFrame(master=window, height=40)
+    columns_frame.pack(side="top", fill="x")
+    column_titles = [
+        "원료명", "기준량(g)", "칭량값(g)", "칭량"
+    ]
+    column_widths = [900,250,250,500]
+    for idx, title in enumerate(column_titles):
+        label = ctk.CTkLabel(
+            master=columns_frame,
+            text=title,
+            font=("pretendard medium", 14, "bold"),
+            width=column_widths[idx],
+            height=80,
+            anchor="center",  # 가운데 정렬
+            fg_color="#52ADD4",  # 이전에 조정한 컬러
+            text_color="black"
+        )
+        if idx == 0: label.grid(row=0, column=idx, sticky="nsew", padx=[7,1])
+        else: label.grid(row=0, column=idx, sticky="nsew", padx=1)
+    for ingredient in recipe:
+        print(ingredient)
+    for i in range(len(recipe)):
+        recipe[i][1] = recipe[i][1]/100*order["작업량(kg)"]
+        recipe[i][2] = round(recipe[i][1]*recipe[i][2]/100,3)
+#------------------------------------------------------------------------------------------------
     now_labels = {}
 
     def measurement(data):
-        target, min, max = data[0], data[1], data[2]
-        measurement_popup = ctk.CTkToplevel(window)
-        measurement_popup.geometry("800x500")
-        measurement_popup.wm_attributes("-topmost", 1)
-        measurement_popup.title(f"{target} 측량 중...")
-        measurement_popup.focus_force()
-        measurement_popup.lift()
+        target, standard, error = data[0], data[1], data[2]
+        popup_window = ctk.CTkToplevel(window)
+        popup_window.geometry("800x500")
+        popup_window.wm_attributes("-topmost", 1)
+        popup_window.title(f"{target} 칭량 중...")
+        popup_window.focus_force()
+        popup_window.lift()
 
-        popup_container_1 = ctk.CTkLabel(master=measurement_popup, height=35, text=f"{target} 측량", font=("Arial", 30, "bold"))
-        popup_container_1.grid(row=0,column=0,sticky="new", pady=20)
+        top_frame = ctk.CTkLabel(master=popup_window, height=50, text=f"{target} 측량", font=("Arial", 30, "bold"))
+        top_frame.grid(row=0,column=0,sticky="new")
 
-        popup_container_2 = ctk.CTkFrame(master=measurement_popup)
-        popup_container_2.grid(row=1, column=0,sticky="nsew", pady=2, padx=2)
+        middle_frame = ctk.CTkLabel(master=popup_window,height=50, text=f"기준량: {standard} g", font=("Arial", 30, "bold"))
+        middle_frame.grid(row=1,column=0,sticky="new")
 
-        popup_container_2_highest = ctk.CTkLabel(master=popup_container_2, text = f"하한\n{min}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
-        popup_container_2_lowest = ctk.CTkLabel(master=popup_container_2, text = f"상한\n{max}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
-        popup_container_2_perfect = ctk.CTkLabel(master=popup_container_2, text = f"적정\n{round((min + max)/2, 3)}kg", font=("Arial", 30, "bold"), width = 100, height = 100)
-
-        popup_container_2_highest.grid(row=0, column=0, sticky="nsew", pady=10, padx =10)
-        popup_container_2_lowest.grid(row=0, column=1, sticky="nsew", pady=10, padx =10)
-        popup_container_2_perfect.grid(row=0, column=2, sticky="nsew", pady=10, padx =10)
-
-        popup_container_2.columnconfigure(0, weight=1)
-        popup_container_2.columnconfigure(1, weight=1)
-        popup_container_2.columnconfigure(2, weight=1)
-
-        popup_container_3 = ctk.CTkFrame(master=measurement_popup)
-        popup_container_3.grid(row=2, column = 0, sticky="nsew", pady=10, padx =10)
+        bottom_frame = ctk.CTkFrame(master=popup_window, height=100)
+        bottom_frame.grid(row=2, column = 0, sticky="nsew")
         count = 0
         def update_value():
             nonlocal now_labels, count
@@ -203,7 +264,7 @@ def measurement_window(data):
                 count = 0
             else: count += 1
             if target != 0:
-                if now_labels[target][1] < min or now_labels[target][1] > max:
+                if now_labels[target][1] < standard-error or now_labels[target][1] > standard+error:
                     popup_container_3_now.configure(fg_color="yellow", text_color="black")
                     now_labels[target][2].configure(fg_color = "lightyellow")
                 else:
@@ -212,109 +273,56 @@ def measurement_window(data):
             popup_container_3_now.configure(text=f"{round(now_labels[target][1],3)}kg")
             popup_container_3_now.after(500, update_value)
 
-        popup_container_3_now = ctk.CTkLabel(master=popup_container_3, text=f"{round(now_labels[target][1],3)}kg", font=("Arial", 100, "bold"))
-        popup_container_3_now.grid(row=0, column = 0, sticky="nsew", pady=10, padx =10)
+        popup_container_3_now = ctk.CTkLabel(master=bottom_frame, text=f"{round(now_labels[target][1],3)}kg", font=("Arial", 50, "bold"))
+        popup_container_3_now.grid(row=0, column = 0, sticky="nsew")
 
         def update_value_():
-            measurement_popup.destroy()
+            popup_window.destroy()
 
-        popup_container_3_done = ctk.CTkButton(master=popup_container_3, text="측정 종료", font=("Arial", 30, "bold"), command = lambda: update_value_())
+        popup_container_3_done = ctk.CTkButton(master=bottom_frame, text="측정 종료", font=("Arial", 30, "bold"), command = lambda: update_value_())
         popup_container_3_done.grid(row=0, column=1, sticky="nsew", pady=10, padx =10)
 
-        popup_container_3.columnconfigure(0,weight=10)
-        popup_container_3.columnconfigure(1,weight=1)
-        popup_container_3.rowconfigure(0,weight=1)
-
-        measurement_popup.columnconfigure(0, weight = 1)
-        measurement_popup.rowconfigure(0, weight = 1)
-        measurement_popup.rowconfigure(1, weight = 1)
-        measurement_popup.rowconfigure(2, weight = 5)
         update_value()
-        measurement_popup.mainloop()
-
+        popup_window.mainloop()
+#------------------------------------------------------------------------------------------------
+    ingredients_frame = ctk.CTkScrollableFrame(master=window, height=650, fg_color="#BBBBBB")
+    ingredients_frame.pack(side="top",pady=[0,5], fill="x")
+    column_widths = [900,250,250,250,250]
     for row, ingredient in enumerate(recipe):
         ingredient_name = ingredient[0]  # 재료 이름
-        min_value = ingredient[1]  # 최소값
-        max_value = ingredient[2]  # 최대값
+        standard_value = ingredient[1]
+        error_value = ingredient[2]
 
-        # 한 줄당 하나의 Frame 생성
-        row_frame = ctk.CTkFrame(right_frame, fg_color="black")  # 검은색 배경으로 경계선 역할
-        row_frame.pack(fill="x", padx=5, pady=5)  # 프레임 간 여백 추가
+        ingredient_frame = ctk.CTkFrame(master=ingredients_frame, height=50)
+        ingredient_frame.pack(side="top",pady=[0,5], fill="x")
 
-        inner_frame = ctk.CTkFrame(row_frame, fg_color="white")  # 내부 프레임 (실제 라벨 배치)
-        inner_frame.pack(fill="both", padx=2, pady=2)  # 테두리를 두껍게 보이게 하기 위한 여백 추가
-
-        ctk.CTkLabel(inner_frame, text=f"재료명: {ingredient_name}", font=("Helvetica", 40, "bold"), width = 500, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        ctk.CTkLabel(inner_frame, text=f"최소: {min_value}kg", font=("Helvetica", 40, "bold"),text_color = "blue", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        ctk.CTkLabel(inner_frame, text=f"최대: {max_value}kg", font=("Helvetica", 40, "bold"),text_color = "red", width = 300, justify="left", anchor="w").pack(side="left", padx=10, pady=20)
-        now_labels[ingredient_name] = [ctk.CTkLabel(inner_frame, text=f"현재: 0kg", font=("Helvetica", 40, "bold"), width = 300, justify="left", anchor="w"), 0, inner_frame]
-        now_labels[ingredient_name][0].pack(side="left", padx=10, pady=20)
-        ctk.CTkButton(inner_frame, text="측정 시작", font=("Helvetica", 40, "bold"), width = 300,height=90, command = lambda data = [ingredient_name, min_value, max_value]: measurement(data)).pack(side="right", padx=1, pady=1)
-    
-    def save(data):
-        user = user_combo.get()
-        save_name = data_path + "/" + today + "_측정완료.csv"
-        orders = pd.read_csv(file_name)
-
-        orders.loc[
-            (orders["지시자"] == data[1]) & 
-            (orders["지시 시간"] == data[2]) & 
-            (orders["작업물"] == data[3]) & 
-            (orders["작업량(kg)"] == data[4]), 
-            "현재 단계"
-        ] = f"2: 측량 완료({user})"
-        orders.to_csv(file_name, index=False)
-        if os.path.isfile(save_name):
-            saving = pd.read_csv(save_name)
-            data.append(user) #작업자 넣을 곳
-            data.append("/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()]))
-            data.append(sum([now_labels[x][1] for x in now_labels.keys()]))
-            print(saving)
-            print(data)
-            saving.loc[len(saving)] = data
-            saving.to_csv(save_name, index = False)
-
-            ingredients = pd.read_csv(config["경로"] + "/ingredients.csv")
-            ingredients["유통기한"] = pd.to_datetime(ingredients["유통기한"])
-            for x in list(now_labels.keys()):
-                if x in list(ingredients["원료명"]):
-                    print(x)
-                    idx = ingredients.loc[ingredients["원료명"] == x, "유통기한"].idxmin()
-                    ingredients.at[idx, "현재량(kg)"] = ingredients.at[idx, "현재량(kg)"] - now_labels[x][1]
-                    print(ingredients.at[idx, "현재량(kg)"])
-            ingredients.to_csv(config["경로"] + "/ingredients.csv", index=False)
-
+        ctk.CTkLabel(ingredient_frame, text=f"{ingredient_name}", font=("pretendard medium", 12, "bold"), width = 900, height=50, justify="left", anchor="w", fg_color="#AAAAAA",corner_radius=0).pack(side="left", padx=1, pady=[0,1])
+        ctk.CTkLabel(ingredient_frame, text=f"{standard_value}", font=("pretendard medium", 12, "bold"), width = 250, height=50, justify="left", fg_color="#AAAAAA",corner_radius=0).pack(side="left", padx=1, pady=[0,1])
+        now_labels[ingredient_name] = [ctk.CTkLabel(ingredient_frame, text=f"0", font=("pretendard medium", 12, "bold"), width = 250, height=50, justify="left", fg_color="#AAAAAA",corner_radius=0), 0, ingredient_frame]
+        now_labels[ingredient_name][0].pack(side="left", padx=1, pady=[0,1])
+        ctk.CTkButton(ingredient_frame, text="칭량 시작", font=("pretendard medium", 12, "bold"), width = 250,height=50, command = lambda data = [ingredient_name, standard_value, error_value]: measurement(data), fg_color="#AAAAAA",corner_radius=0).pack(side="left", padx=1, pady=[0,1])
+        if ingredient_name[-1] == "*":
+            ctk.CTkButton(ingredient_frame, text="칭량 완료", font=("pretendard medium", 12, "bold"), width = 250,height=50, command = lambda data=ingredient[0]: now_labels[data], fg_color="#AAAAAA",corner_radius=0).pack(side="left", padx=1, pady=[0,1])
         else:
-            saving = pd.DataFrame({
-        "작업일": [data[0]],
-        "지시자": [data[1]],
-        "지시 시간": [data[2]],
-        "작업물": [data[3]],
-        "작업량(kg)": [data[4]],
-        "배합 가마": [data[5]],
-        "측량자": [user], # 작업자 넣을 곳
-        "측량 결과":["/".join([f"{x}:{now_labels[x][1]}kg" for x in now_labels.keys()])],
-        "측량 총량":[sum([now_labels[x][1] for x in now_labels.keys()])]
-        })
-            saving.to_csv(save_name, index = False)
+            now_labels.append(ctk.CTkLabel(ingredient_frame, text="칭량 완료", font=("pretendard medium", 12, "bold"), width = 250,height=50, fg_color="#AAAAAA",corner_radius=0))
+            now_labels[-1].pack(side="left", padx=1, pady=[0,1])
+#------------------------------------------------------------------------------------------------
+#save, cancel 함수
+#------------------------------------------------------------------------------------------------
+    buttons_frame = ctk.CTkFrame(master=window, height=100)
+    buttons_frame.pack(side="top",pady=[5,5], fill="x")
+    worker = ctk.CTkComboBox(master=buttons_frame, height=100, width=450, font=("pretendard medium", 20, "bold"))
+    worker.pack(side="left",padx=15,fill="x")
+    save_button = ctk.CTkButton(master=buttons_frame, height=100, width=450, text="전체 칭량 완료", font=("pretendard medium", 20, "bold"), command=lambda :save(order))
+    save_button.pack(side="left",padx=15,fill="x")
+    cancel_button = ctk.CTkButton(master=buttons_frame, height=100, width=450, text="칭량 취소", font=("pretendard medium", 20, "bold"), command=window.destroy)
+    cancel_button.pack(side="left",padx=15,fill="x")
+    history_button = ctk.CTkButton(master=buttons_frame, height=100, width=450, text="칭량작업 기록서", font=("pretendard medium", 20, "bold"), command=lambda:history(order, now_labels))
+    history_button.pack(side="left",padx=15,fill="x")
 
-        window.destroy()
-
-    def cancel():
-        window.destroy()
-    user_combo = ctk.CTkComboBox(left_frame, values=config["작업자"]["측량자"], font=("Helvetica", 20, "bold"), height = 50)
-    user_combo.grid(row=1, column=0, sticky="s", pady=10, padx = 10)
-
-    done_button = ctk.CTkButton(left_frame, text="측정\n완료", font=("Helvetica", 40, "bold"), command=lambda: save(data), height = 450)
-    done_button.grid(row=2, column=0, sticky="s", pady=10, padx = 10)
-
-    cancel_button = ctk.CTkButton(left_frame, text="측정\n취소", font=("Helvetica", 40, "bold"), command=lambda: cancel(), height = 450)
-    cancel_button.grid(row=3, column=0, sticky="s", pady=10, padx = 10)
-
-    update_time()
     window.mainloop()
 
 
 if __name__ == "__main__":
-    measurement_window(['2024-01-03', '김철수', '14:00', '마', 10, 'a', '0: 작업 전'])
-    # measurement_start()
+    # measurement_window(['2024-01-03', '김철수', '14:00', '마', 10, 'a', '0: 작업 전'])
+    measurement_start()

@@ -7,16 +7,17 @@ import tkinter.ttk as ttk
 from CTkMessagebox import CTkMessagebox
 from main_menu.style import configure_treeview_style
 
-with open("config.pickle", "rb") as fr:
-    config = pickle.load(fr)
-
-data_path = config["경로"] + "/data"
-if not os.path.exists(data_path):
-    os.makedirs(data_path)
-today = datetime.today().strftime("%Y_%m_%d")
-file_name = data_path + "/" + today + "_작업지시.csv"
-
 def mix_start():
+#-------------------------------------------------------------------------
+    with open("config.pickle", "rb") as fr:
+        config = pickle.load(fr)
+
+    data_path = config["경로"] + "/data"
+    if not os.path.exists(data_path):
+        os.makedirs(data_path)
+    today = datetime.today().strftime("%Y_%m_%d")
+    file_name = data_path + "/" + today + "_작업지시.csv"
+#-------------------------------------------------------------------------
     if os.path.isfile(file_name):
         orders = pd.read_csv(file_name)
         orders_ = orders[orders["현재 단계"].str.startswith("2")]
@@ -37,11 +38,34 @@ def mix_start():
     window.title("작업 지시")
     window.attributes('-fullscreen', True)
 
-    up_frame = ctk.CTkFrame(master=window, height=40)
-    up_frame.pack(side="top", fill="x")
+    up_frame = ctk.CTkFrame(master=window, height=40, fg_color="#333333", corner_radius=0)
+    up_frame.pack(side="top", fill="x",pady=[0,5])
 
-    time_label = ctk.CTkLabel(window, font=("Arial", 30, "bold"))
+    title_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text="칭량 작업",
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
+    title_label.place(relx=0.0, x=10, y=10, anchor="nw")
+
+    time_label = ctk.CTkLabel(
+        window,
+        font=("pretendard medium", 14, "bold"),
+        text_color="#ffffff",       # 흰 글자
+        bg_color="#333333"          # 배경 회색
+    )
     time_label.place(relx=1.0, x=-10, y=10, anchor="ne")
+
+    def update_time():
+        now = datetime.now()
+        formatted_time = now.strftime("현재 시각: %Y/%m/%d - %H:%M:%S")
+        time_label.configure(text=formatted_time)
+        window.after(1000, update_time)
+
+    update_time()
+#-------------------------------------------------------------------------
 
     def refresh_tree():
         if os.path.isfile(file_name):
